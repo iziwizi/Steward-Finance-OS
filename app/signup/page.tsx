@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { signUp } from "@/lib/actions/auth";
+import { SignupForm } from "./signup-form";
 
 export default function SignupPage() {
   return (
@@ -12,41 +12,7 @@ export default function SignupPage() {
           you can edit percentages and accounts afterward.
         </p>
 
-        <form action={signUp} className="mt-8 space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-ink/80">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
-            />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-ink/80">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={8}
-              autoComplete="new-password"
-              className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
-            />
-          </div>
-          <button
-            type="submit"
-            className="tap-target w-full rounded-xl bg-accent font-medium text-white"
-          >
-            Create account
-          </button>
-        </form>
+        <SignupForm />
 
         <p className="mt-6 text-center text-sm text-ink/60">
           Already have an account?{" "}
