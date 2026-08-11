@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: #fafaf8;
+  color: #0f1115;
+}
+
+/* Comfortable minimum touch target for mobile-first entry flows */
+.tap-target {
+  min-height: 44px;
+}
