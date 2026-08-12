@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 const mockSignInWithPassword = vi.fn();
 const mockSignUp = vi.fn();
 const mockSignOut = vi.fn();
+const mockResend = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -10,8 +11,13 @@ vi.mock("@/lib/supabase/server", () => ({
       signInWithPassword: mockSignInWithPassword,
       signUp: mockSignUp,
       signOut: mockSignOut,
+      resend: mockResend,
     },
   })),
+}));
+
+vi.mock("@/lib/supabase/redirect-url", () => ({
+  getAuthRedirectOrigin: vi.fn(async () => "http://localhost:3000"),
 }));
 
 const mockRedirect = vi.fn((path: string) => {
@@ -22,7 +28,7 @@ vi.mock("next/navigation", () => ({
   redirect: mockRedirect,
 }));
 
-const { logIn, signUp, logOut } = await import("./auth");
+const { logIn, signUp, logOut, resendConfirmation } = await import("./auth");
 
 function formData(fields: Record<string, string>) {
   const fd = new FormData();
@@ -34,6 +40,7 @@ beforeEach(() => {
   mockSignInWithPassword.mockReset();
   mockSignUp.mockReset();
   mockSignOut.mockReset();
+  mockResend.mockReset();
   mockRedirect.mockClear();
 });
 
@@ -80,7 +87,17 @@ describe("signUp", () => {
       { error: null },
       formData({ email: "a@b.com", password: "secret123" })
     );
-    expect(result.success).toMatch(/check your email/i);
+    expect(result.success).toMatch(/check a@b\.com for a confirmation link/i);
+  });
+
+  it("passes emailRedirectTo pointing at /auth/confirm on the request origin", async () => {
+    mockSignUp.mockResolvedValue({ data: { session: null }, error: null });
+    await signUp({ error: null }, formData({ email: "a@b.com", password: "secret123" }));
+    expect(mockSignUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: { emailRedirectTo: "http://localhost:3000/auth/confirm" },
+      })
+    );
   });
 
   it("redirects to /dashboard when a session is returned immediately", async () => {
@@ -100,6 +117,31 @@ describe("signUp", () => {
       formData({ email: "a@b.com", password: "secret123" })
     );
     expect(result.error).toMatch(/already exists/i);
+  });
+});
+
+describe("resendConfirmation", () => {
+  it("resends and reports success", async () => {
+    mockResend.mockResolvedValue({ error: null });
+    const result = await resendConfirmation({ error: null }, formData({ email: "a@b.com" }));
+    expect(result.success).toMatch(/resent to a@b\.com/i);
+    expect(mockResend).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "signup", email: "a@b.com" })
+    );
+  });
+
+  it("returns a friendly error when rate limited", async () => {
+    mockResend.mockResolvedValue({
+      error: { message: "For security purposes...", status: 429, code: "over_email_send_rate_limit" },
+    });
+    const result = await resendConfirmation({ error: null }, formData({ email: "a@b.com" }));
+    expect(result.error).toMatch(/wait a moment/i);
+  });
+
+  it("requires an email", async () => {
+    const result = await resendConfirmation({ error: null }, formData({}));
+    expect(result.error).toBeTruthy();
+    expect(mockResend).not.toHaveBeenCalled();
   });
 });
 

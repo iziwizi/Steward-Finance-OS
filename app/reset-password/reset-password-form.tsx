@@ -1,12 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
-import Link from "next/link";
-import { logIn } from "@/lib/actions/auth";
+import { updatePassword } from "@/lib/actions/password-reset";
 import { initialAuthState } from "@/lib/actions/auth-state";
 
-export function LoginForm() {
-  const [state, formAction, pending] = useActionState(logIn, initialAuthState);
+export function ResetPasswordForm() {
+  const [state, formAction, pending] = useActionState(updatePassword, initialAuthState);
 
   return (
     <form action={formAction} className="mt-8 space-y-4">
@@ -16,42 +15,39 @@ export function LoginForm() {
         </p>
       )}
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-ink/80">
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          autoComplete="email"
-          className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
-        />
-      </div>
-      <div>
         <label htmlFor="password" className="block text-sm font-medium text-ink/80">
-          Password
+          New password
         </label>
         <input
           id="password"
           name="password"
           type="password"
           required
-          autoComplete="current-password"
+          minLength={8}
+          autoComplete="new-password"
           className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
         />
-        <div className="mt-1 text-right">
-          <Link href="/forgot-password" className="text-sm text-ink/50 underline">
-            Forgot password?
-          </Link>
-        </div>
+      </div>
+      <div>
+        <label htmlFor="confirmPassword" className="block text-sm font-medium text-ink/80">
+          Confirm new password
+        </label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          required
+          minLength={8}
+          autoComplete="new-password"
+          className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
+        />
       </div>
       <button
         type="submit"
         disabled={pending}
         className="tap-target w-full rounded-xl bg-accent font-medium text-white disabled:opacity-60"
       >
-        {pending ? "Logging in…" : "Log in"}
+        {pending ? "Updating…" : "Update password"}
       </button>
     </form>
   );

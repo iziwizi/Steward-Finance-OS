@@ -41,4 +41,13 @@ describe("updateSession", () => {
     const res = await updateSession(new NextRequest("http://localhost:3000/dashboard"));
     expect(res.status).toBe(200);
   });
+
+  it.each(["/auth/confirm", "/forgot-password", "/reset-password", "/offline"])(
+    "lets unauthenticated users reach %s",
+    async (path) => {
+      mockGetUser.mockResolvedValue({ data: { user: null } });
+      const res = await updateSession(new NextRequest(`http://localhost:3000${path}`));
+      expect(res.status).toBe(200);
+    }
+  );
 });

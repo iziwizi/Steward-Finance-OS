@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAuthRedirectOrigin } from "@/lib/supabase/redirect-url";
 import type { AuthActionState } from "@/lib/actions/auth-state";
 
 function friendlyLoginError(message: string): string {
@@ -40,7 +41,12 @@ export async function signUp(
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const origin = await getAuthRedirectOrigin();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: `${origin}/auth/confirm` },
+  });
 
   if (error) {
     console.error("[auth:signUp] failed", { status: error.status, code: error.code, message: error.message });
@@ -52,11 +58,37 @@ export async function signUp(
   if (!data.session) {
     return {
       error: null,
-      success: "Account created! Check your email for a confirmation link, then log in.",
+      success: `Account created! Check ${email} for a confirmation link, then log in.`,
     };
   }
 
   redirect("/dashboard");
+}
+
+export async function resendConfirmation(
+  _prevState: AuthActionState,
+  formData: FormData
+): Promise<AuthActionState> {
+  const email = String(formData.get("email") || "");
+  if (!email) return { error: "Email is required." };
+
+  const supabase = await createClient();
+  const origin = await getAuthRedirectOrigin();
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: { emailRedirectTo: `${origin}/auth/confirm` },
+  });
+
+  if (error) {
+    console.error("[auth:resendConfirmation] failed", { status: error.status, code: error.code, message: error.message });
+    if (error.message.toLowerCase().includes("security purposes") || error.status === 429) {
+      return { error: "Please wait a moment before requesting another email." };
+    }
+    return { error: "We couldn't resend the confirmation email right now. Please try again." };
+  }
+
+  return { error: null, success: `Confirmation email resent to ${email}.` };
 }
 
 export async function logIn(

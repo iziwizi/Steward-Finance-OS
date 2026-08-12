@@ -9,8 +9,8 @@ export default async function DashboardPage() {
   const data = await getDashboardData("current_month");
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-start justify-between">
+    <div className="space-y-6 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:space-y-0">
+      <header className="flex items-start justify-between lg:col-span-3">
         <div>
           <p className="text-sm text-ink/50">Current Month</p>
           <h1 className="text-2xl font-semibold">Dashboard</h1>
@@ -26,6 +26,7 @@ export default async function DashboardPage() {
             "use server";
             await markCelebrationSeen(data.latestCelebration!.id);
           }}
+          className="lg:col-span-3"
         >
           <button
             type="submit"
@@ -41,6 +42,8 @@ export default async function DashboardPage() {
         </form>
       )}
 
+      {/* Main column: the numbers that change day to day */}
+      <div className="space-y-6 lg:col-span-2">
       {/* The single most important number: what can I actually spend right now */}
       <section className="rounded-2xl border border-accent/30 bg-accent/5 p-4">
         <p className="text-xs text-ink/50">Available to spend</p>
@@ -92,7 +95,10 @@ export default async function DashboardPage() {
           </Link>
         )}
       </section>
+      </div>
 
+      {/* Side column: things you check, not things that change hourly */}
+      <div className="space-y-6 lg:col-span-1">
       {/* Tithe — first class */}
       <section className="rounded-2xl border border-gold/30 bg-gold/5 p-4">
         <h2 className="text-sm font-semibold text-ink/70">Tithe</h2>
@@ -168,6 +174,7 @@ export default async function DashboardPage() {
           })}
         </div>
       </section>
+      </div>
     </div>
   );
 }

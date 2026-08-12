@@ -1,17 +1,28 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import Link from "next/link";
 import { signUp } from "@/lib/actions/auth";
 import { initialAuthState } from "@/lib/actions/auth-state";
+import { ResendConfirmation } from "./resend-confirmation";
 
 export function SignupForm() {
   const [state, formAction, pending] = useActionState(signUp, initialAuthState);
+  const [email, setEmail] = useState("");
 
   if (state.success) {
     return (
-      <p role="status" className="mt-8 rounded-xl bg-accent/10 px-4 py-3 text-sm text-accent">
-        {state.success}
-      </p>
+      <div className="mt-8 space-y-3">
+        <p role="status" className="rounded-xl bg-accent/10 px-4 py-3 text-sm text-accent">
+          {state.success}
+        </p>
+        {email && <ResendConfirmation email={email} />}
+        <p className="text-center text-sm text-ink/60">
+          <Link href="/login" className="font-medium text-accent">
+            Back to log in
+          </Link>
+        </p>
+      </div>
     );
   }
 
@@ -32,6 +43,8 @@ export function SignupForm() {
           type="email"
           required
           autoComplete="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="tap-target mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 text-base"
         />
       </div>
