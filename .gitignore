@@ -24,3 +24,4 @@ env.download
 .DS_Store
 npm-debug.log*
 coverage/
+.claude/
