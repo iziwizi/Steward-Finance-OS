@@ -1,6 +1,8 @@
+import { CreditCard } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { createBill, markBillPaid } from "@/lib/actions/misc";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function BillsPage() {
   const supabase = await createClient();
@@ -55,7 +57,13 @@ export default async function BillsPage() {
             </div>
           );
         })}
-        {(bills ?? []).length === 0 && <p className="text-sm text-ink/50">No bills tracked yet.</p>}
+        {(bills ?? []).length === 0 && (
+          <EmptyState
+            icon={CreditCard}
+            title="No bills tracked"
+            description="Add your recurring subscriptions and household bills to stay ahead and protect your allocations."
+          />
+        )}
       </section>
 
       <section className="rounded-2xl border border-ink/10 bg-white p-4">

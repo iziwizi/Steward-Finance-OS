@@ -34,18 +34,24 @@ export async function signUp(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
+  const fullName = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
+  const confirmPassword = String(formData.get("confirmPassword") || "");
 
   if (!email || !password) return { error: "Email and password are required." };
   if (password.length < 8) return { error: "Password must be at least 8 characters." };
+  if (confirmPassword && password !== confirmPassword) return { error: "Passwords don't match." };
 
   const supabase = await createClient();
   const origin = await getAuthRedirectOrigin();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${origin}/auth/confirm` },
+    options: {
+      emailRedirectTo: `${origin}/auth/confirm`,
+      data: fullName ? { full_name: fullName } : undefined,
+    },
   });
 
   if (error) {

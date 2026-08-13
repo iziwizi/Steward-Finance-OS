@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthRedirectOrigin } from "@/lib/supabase/redirect-url";
 import type { AuthActionState } from "@/lib/actions/auth-state";
@@ -71,5 +70,5 @@ export async function updatePassword(
     return { error: "We couldn't update your password right now. Please try again." };
   }
 
-  redirect("/dashboard");
+  return { error: null, success: "Your password has been changed successfully." };
 }

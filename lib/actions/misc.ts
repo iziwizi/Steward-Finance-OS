@@ -123,22 +123,6 @@ export async function createJournalEntry(formData: FormData) {
   redirect("/journal");
 }
 
-export async function updateBucket(formData: FormData) {
-  const { supabase, user } = await requireUser();
-  const id = String(formData.get("id") || "");
-  const target_percent = Number(formData.get("target_percent") || 0);
-  const default_account_id = String(formData.get("default_account_id") || "") || null;
-
-  const { error } = await supabase
-    .from("budget_buckets")
-    .update({ target_percent, default_account_id })
-    .eq("id", id)
-    .eq("user_id", user.id);
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/settings");
-}
-
 export async function updateNotificationPrefs(formData: FormData) {
   const { supabase, user } = await requireUser();
   const notification_email = String(formData.get("notification_email") || "");

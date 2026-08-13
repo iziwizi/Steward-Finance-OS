@@ -106,15 +106,14 @@ describe("updatePassword", () => {
     expect(mockUpdateUser).not.toHaveBeenCalled();
   });
 
-  it("updates the password and redirects to /dashboard on success", async () => {
+  it("updates the password and returns a success state", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } } });
     mockUpdateUser.mockResolvedValue({ error: null });
-    await expect(
-      updatePassword(
-        { error: null },
-        formData({ password: "newpassword123", confirmPassword: "newpassword123" })
-      )
-    ).rejects.toThrow("NEXT_REDIRECT:/dashboard");
+    const result = await updatePassword(
+      { error: null },
+      formData({ password: "newpassword123", confirmPassword: "newpassword123" })
+    );
+    expect(result.success).toBeTruthy();
     expect(mockUpdateUser).toHaveBeenCalledWith({ password: "newpassword123" });
   });
 });

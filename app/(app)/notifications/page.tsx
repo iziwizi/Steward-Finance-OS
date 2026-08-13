@@ -1,6 +1,8 @@
+import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notifications";
 import { PushSubscribeButton } from "./push-subscribe-button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
@@ -53,7 +55,11 @@ export default async function NotificationsPage() {
           </form>
         ))}
         {(notifications ?? []).length === 0 && (
-          <p className="text-sm text-ink/50">No notifications yet.</p>
+          <EmptyState
+            icon={Bell}
+            title="All caught up"
+            description="You have no new alerts. We'll let you know when bill dates approach or allocations require action."
+          />
         )}
       </div>
     </div>

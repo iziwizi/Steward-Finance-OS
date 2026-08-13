@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { Target } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { contributeToGoal } from "@/lib/actions/goals";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function GoalsPage() {
   const supabase = await createClient();
@@ -73,7 +75,15 @@ export default async function GoalsPage() {
             </div>
           );
         })}
-        {active.length === 0 && <p className="text-sm text-ink/50">No active goals yet.</p>}
+        {active.length === 0 && (
+          <EmptyState
+            icon={Target}
+            title="No goals set"
+            description="Start working toward something meaningful. Plan emergency funds, savings, or direct asset purchases."
+            actionLabel="Create a Goal"
+            actionHref="/goals/new"
+          />
+        )}
       </section>
 
       {completed.length > 0 && (

@@ -1,9 +1,11 @@
+import { ListChecks } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { AllocationToggle } from "./allocation-toggle";
 import { DeleteTransactionButton } from "./delete-button";
 import { deleteIncome } from "@/lib/actions/income";
 import { deleteExpense } from "@/lib/actions/expenses";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function TransactionsPage() {
   const supabase = await createClient();
@@ -72,7 +74,13 @@ export default async function TransactionsPage() {
             </div>
           ))}
           {(income ?? []).length === 0 && (
-            <p className="text-sm text-ink/50">No income recorded yet.</p>
+            <EmptyState
+              icon={ListChecks}
+              title="No transactions yet"
+              description="Record your first income transaction to start monitoring your StewardOS cash flow."
+              actionLabel="Add Income"
+              actionHref="/income/new"
+            />
           )}
         </div>
       </section>
@@ -98,7 +106,13 @@ export default async function TransactionsPage() {
             </div>
           ))}
           {(expenses ?? []).length === 0 && (
-            <p className="text-sm text-ink/50">No expenses recorded yet.</p>
+            <EmptyState
+              icon={ListChecks}
+              title="No transactions yet"
+              description="Record your first expense transaction to start monitoring your StewardOS cash flow."
+              actionLabel="Add Expense"
+              actionHref="/expenses/new"
+            />
           )}
         </div>
       </section>

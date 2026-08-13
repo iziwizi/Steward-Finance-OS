@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage({
@@ -9,23 +10,24 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex min-h-dvh flex-col justify-center px-6 py-10">
+    <main className="flex min-h-dvh flex-col justify-center bg-paper px-6 py-10">
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-semibold text-ink">Welcome back</h1>
-        <p className="mt-1 text-sm text-ink/60">Log in to StewardOS.</p>
+        <Logo />
+        <h1 className="mt-9 text-display-md text-zinc-900">Welcome back</h1>
+        <p className="mt-1 text-sm text-zinc-500">Sign in to your financial operating system</p>
 
         {error === "confirmation_failed" && (
-          <p className="mt-6 rounded-xl bg-danger/10 px-4 py-3 text-sm text-danger">
+          <p className="mt-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
             That confirmation or reset link is invalid or has expired. Please try again below.
           </p>
         )}
 
         <LoginForm />
 
-        <p className="mt-6 text-center text-sm text-ink/60">
-          New here?{" "}
-          <Link href="/signup" className="font-medium text-accent">
-            Create an account
+        <p className="mt-8 text-center text-sm text-zinc-500">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="font-semibold text-brand-500">
+            Sign up
           </Link>
         </p>
       </div>
