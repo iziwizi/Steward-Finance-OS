@@ -3,19 +3,13 @@ import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { createClient } from "@/lib/supabase/server";
 import { markCelebrationSeen } from "@/lib/actions/celebrations";
+import { getTimeOfDayGreeting, getUserFirstName } from "@/lib/utils/greeting";
 import {
   Sparkles,
   Zap,
-  ArrowUpRight,
-  ArrowDownLeft,
   Calendar,
-  ChevronRight,
-  TrendingUp,
-  CheckCircle2,
-  Clock,
 } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
-import { Badge } from "@/components/ui/badge";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -28,7 +22,8 @@ export default async function DashboardPage() {
     getDashboardData("current_month"),
   ]);
 
-  const userName = profile?.full_name?.split(" ")[0] || "there";
+  const firstName = getUserFirstName(profile?.full_name, user?.email);
+  const timeGreeting = getTimeOfDayGreeting();
 
   // Build combined recent transactions table data matching Figma desktop spec
   const recentTransactions = [
@@ -58,7 +53,7 @@ export default async function DashboardPage() {
     .sort((a, b) => new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime())
     .slice(0, 6);
 
-  // Mock historical cash flow comparison for the 8-month chart shown in Figma
+  // Historical cash flow comparison for the 8-month chart shown in Figma
   const monthlyHistory = [
     { month: "Jan", income: 320, expense: 95 },
     { month: "Feb", income: 320, expense: 110 },
@@ -78,14 +73,14 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Top Welcome Header */}
+      {/* Top Welcome Header with Dynamic Time-of-Day Greeting & User Name */}
       <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">
-            Good morning, {userName}
+            {timeGreeting}, {firstName}
           </h1>
           <p className="text-xs text-zinc-500">
-            Here's what your financial landscape looks like today.
+            Here is your financial workspace for today.
           </p>
         </div>
       </div>
@@ -112,55 +107,49 @@ export default async function DashboardPage() {
         </form>
       )}
 
-      {/* 4 Metrics Cards Row — Exactly Matching Figma Desktop Dashboard */}
+      {/* 4 Metrics Cards Row — Matching Figma desktop-dashboard */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Total Available Cash (Dark Teal) */}
+        {/* Card 1: Available Cash (Dark Teal) */}
         <div className="flex flex-col justify-between rounded-xl bg-brand-500 p-5 text-white shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-100">
-              Total Available Cash
-            </span>
-            <span className="rounded-full bg-brand-400/40 px-2 py-0.5 text-[10px] font-bold text-white">
-              +12.4%
+              Available Cash
             </span>
           </div>
           <div className="mt-3">
             <p className="text-2xl font-extrabold tracking-tight text-white lg:text-3xl">
               {formatNaira(data.availableCash)}
             </p>
-            <p className="mt-1 text-[11px] text-brand-100/80">Uncommitted cash available to spend</p>
           </div>
         </div>
 
-        {/* Card 2: Monthly Income (White) */}
+        {/* Card 2: Income (White) */}
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Monthly Income
+              Income
             </span>
-            <span className="text-[11px] font-bold text-emerald-600">+8.1%</span>
+            <span className="text-[11px] font-bold text-emerald-600">+12.4%</span>
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold tracking-tight text-zinc-900 lg:text-3xl">
-              +{formatNaira(data.totalIncome)}
+              {formatNaira(data.totalIncome)}
             </p>
-            <p className="mt-1 text-[11px] text-zinc-400">Total received across accounts</p>
           </div>
         </div>
 
-        {/* Card 3: Monthly Expenses (White) */}
+        {/* Card 3: Expenses (White) */}
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Monthly Expenses
+              Expenses
             </span>
             <span className="text-[11px] font-bold text-rose-500">-4.2%</span>
           </div>
           <div className="mt-3">
             <p className="text-2xl font-bold tracking-tight text-zinc-900 lg:text-3xl">
-              -{formatNaira(data.totalExpenses)}
+              {formatNaira(data.totalExpenses)}
             </p>
-            <p className="mt-1 text-[11px] text-zinc-400">Spent on living & obligations</p>
           </div>
         </div>
 
@@ -183,7 +172,6 @@ export default async function DashboardPage() {
               {data.netCashFlow >= 0 ? "+" : ""}
               {formatNaira(data.netCashFlow)}
             </p>
-            <p className="mt-1 text-[11px] text-zinc-400">Net capital accumulation</p>
           </div>
         </div>
       </div>
@@ -247,7 +235,7 @@ export default async function DashboardPage() {
                 href="/transactions"
                 className="text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                View All
+                View Ledger
               </Link>
             </div>
 
@@ -259,14 +247,13 @@ export default async function DashboardPage() {
                     <th className="py-2.5 px-3">Description</th>
                     <th className="py-2.5 px-3 hidden sm:table-cell">Category</th>
                     <th className="py-2.5 px-3 hidden md:table-cell">Account</th>
-                    <th className="py-2.5 px-3">Status</th>
                     <th className="py-2.5 pl-3 text-right">Amount</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
                   {recentTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-xs text-zinc-400">
+                      <td colSpan={5} className="py-6 text-center text-xs text-zinc-400">
                         No transactions recorded yet this month.
                       </td>
                     </tr>
@@ -280,22 +267,6 @@ export default async function DashboardPage() {
                         </td>
                         <td className="py-3 px-3 text-zinc-400 hidden md:table-cell">
                           {tx.account}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                              tx.status === "Cleared"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                tx.status === "Cleared" ? "bg-emerald-500" : "bg-amber-500"
-                              }`}
-                            />
-                            {tx.status}
-                          </span>
                         </td>
                         <td
                           className={`py-3 pl-3 text-right font-bold ${
@@ -321,10 +292,10 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <h2 className="text-sm font-bold text-zinc-900">Allocation Health</h2>
               <Link
-                href="/settings"
+                href="/settings?tab=allocations"
                 className="text-xs font-semibold text-brand-600 hover:text-brand-700"
               >
-                Manage
+                Configure
               </Link>
             </div>
 

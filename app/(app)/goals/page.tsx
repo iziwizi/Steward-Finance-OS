@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Target, Plus, CheckCircle2, TrendingUp } from "lucide-react";
+import { Target, Plus, CheckCircle2, TrendingUp, AlertCircle, Edit3 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { contributeToGoal } from "@/lib/actions/goals";
@@ -28,12 +28,12 @@ export default async function GoalsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Title and Create Action */}
+      {/* Header matching Figma desktop-goals */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Active Goals</h1>
           <p className="text-xs text-zinc-500">
-            Set targets, track progress, and allocate for your long-term and short-term life objectives.
+            Define, structure, and save for your long-term and short-term life objectives.
           </p>
         </div>
         <Link
@@ -45,34 +45,50 @@ export default async function GoalsPage() {
         </Link>
       </div>
 
-      {/* Top 4 Summary Metrics Cards matching Figma desktop-goals */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {/* 4 Summary Metrics Cards matching Figma desktop-goals */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Total Saved</p>
-          <p className="mt-1 text-xl font-bold text-brand-600">{formatNaira(totalSaved)}</p>
-          <p className="text-[10px] text-zinc-400 mt-0.5">Across all goals</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Total Saved Balance</p>
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold text-brand-700">
+              Active Fund
+            </span>
+          </div>
+          <p className="mt-2 text-xl font-extrabold text-zinc-900">{formatNaira(totalSaved)}</p>
         </div>
 
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Active Goals</p>
-          <p className="mt-1 text-xl font-bold text-zinc-900">{active.length} Goals</p>
-          <p className="text-[10px] text-zinc-400 mt-0.5">In progress</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Active Goals Count</p>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-700">
+              On Track
+            </span>
+          </div>
+          <p className="mt-2 text-xl font-extrabold text-zinc-900">{active.length} Goals</p>
         </div>
 
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Completed Goals</p>
-          <p className="mt-1 text-xl font-bold text-emerald-600">{completed.length} Goals</p>
-          <p className="text-[10px] text-zinc-400 mt-0.5">Fully reached</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Completed Goals</p>
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[9px] font-bold text-brand-700">
+              Achieved
+            </span>
+          </div>
+          <p className="mt-2 text-xl font-extrabold text-emerald-600">{completed.length} Goals</p>
         </div>
 
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Total Target</p>
-          <p className="mt-1 text-xl font-bold text-zinc-900">{formatNaira(totalTarget)}</p>
-          <p className="text-[10px] text-zinc-400 mt-0.5">Total funding needed</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Total Funding Target</p>
+            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[9px] font-bold text-zinc-600">
+              Target
+            </span>
+          </div>
+          <p className="mt-2 text-xl font-extrabold text-zinc-900">{formatNaira(totalTarget)}</p>
         </div>
       </div>
 
-      {/* 2x2 Grid of Goals matching Figma desktop-goals */}
+      {/* 2x2 Grid of Goal Cards matching Figma desktop-goals */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         {active.map((g) => {
           const { remaining, progressPercent } = calculateGoalProgress(
@@ -89,28 +105,32 @@ export default async function GoalsPage() {
                   <div>
                     <h3 className="text-sm font-bold text-zinc-900">{g.name}</h3>
                     <p className="text-[11px] text-zinc-400">
-                      {g.category} · {g.target_date ? `Target: ${g.target_date}` : "Ongoing"}
+                      Target: {g.target_date ? g.target_date : "Ongoing"}
                     </p>
                   </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-brand-500 text-xs font-bold text-brand-600">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-brand-500 text-xs font-bold text-brand-600">
                     {progressPercent}%
                   </div>
                 </div>
 
                 <div className="mt-4">
                   <div className="flex justify-between text-xs">
-                    <span className="font-bold text-zinc-900">{formatNaira(Number(g.current_amount))}</span>
-                    <span className="text-zinc-400">of {formatNaira(Number(g.target_amount))}</span>
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Saved Amount</p>
+                      <p className="font-bold text-zinc-900 text-sm">{formatNaira(Number(g.current_amount))}</p>
+                      <p className="text-[10px] text-zinc-400">of {formatNaira(Number(g.target_amount))}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Remaining</p>
+                      <p className="font-bold text-brand-600 text-sm">{formatNaira(remaining)}</p>
+                    </div>
                   </div>
-                  <ProgressBar percent={progressPercent} tone="brand" className="mt-2 h-2" />
-                  <p className="mt-1 text-right text-[10px] text-zinc-400">
-                    {formatNaira(remaining)} remaining
-                  </p>
+                  <ProgressBar percent={progressPercent} tone="brand" className="mt-2.5 h-2" />
                 </div>
               </div>
 
               {/* Contribution Form */}
-              <form action={contributeToGoal} className="flex gap-2 pt-2 border-t border-zinc-100">
+              <form action={contributeToGoal} className="flex gap-2 pt-3 border-t border-zinc-100">
                 <input type="hidden" name="goal_id" value={g.id} />
                 <input
                   type="number"

@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Bell, Search, Plus, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { Bell, Plus, LogOut, Settings as SettingsIcon, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/data/ensure-profile";
 import { ConnectionBanner } from "./connection-banner";
 import { SidebarLink, BottomNavLink } from "./nav-link";
 import { Logo } from "@/components/logo";
 import { logOut } from "@/lib/actions/auth";
+import { GlobalSearch } from "@/components/global-search";
 
 const DESKTOP_NAV_MAIN = [
   { href: "/dashboard", label: "Overview" },
@@ -17,7 +18,7 @@ const DESKTOP_NAV_MAIN = [
 ];
 
 const DESKTOP_NAV_PLANNING = [
-  { href: "/settings", label: "Allocations" },
+  { href: "/allocations", label: "Allocations" },
   { href: "/bills", label: "Bills" },
   { href: "/subscriptions", label: "Subscriptions" },
 ];
@@ -65,7 +66,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .map((n: string) => n[0])
     .join("")
     .toUpperCase()
-    .slice(0, 2) || "U";
+    .slice(0, 2) || "MA";
+  const avatarUrl = profile?.avatar_url || null;
 
   return (
     <div className="min-h-dvh bg-paper pb-20 md:flex md:pb-0">
@@ -108,36 +110,55 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* User Card at bottom of sidebar */}
-        <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 font-bold text-white text-xs">
-                {userInitials}
+        {/* User Card & Branding at bottom of sidebar */}
+        <div className="space-y-3">
+          <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500 font-bold text-white text-xs">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
+                  ) : (
+                    <span>{userInitials}</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-bold text-zinc-900">{userName}</p>
+                  <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-bold text-zinc-900">{userName}</p>
-                <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Link
-                href="/settings"
-                className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
-                title="Settings"
-              >
-                <SettingsIcon className="h-3.5 w-3.5" />
-              </Link>
-              <form action={logOut}>
-                <button
-                  type="submit"
-                  className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-rose-600"
-                  title="Log out"
+              <div className="flex items-center gap-1">
+                <Link
+                  href="/settings?tab=profile"
+                  className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                  title="Settings"
                 >
-                  <LogOut className="h-3.5 w-3.5" />
-                </button>
-              </form>
+                  <SettingsIcon className="h-3.5 w-3.5" />
+                </Link>
+                <form action={logOut}>
+                  <button
+                    type="submit"
+                    className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-rose-600"
+                    title="Log out"
+                  >
+                    <LogOut className="h-3.5 w-3.5" />
+                  </button>
+                </form>
+              </div>
             </div>
+          </div>
+
+          {/* MUJTEKNIFY Product Attribution */}
+          <div className="px-2 text-center">
+            <a
+              href="https://mujteknify.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-1 text-[10px] font-medium text-zinc-400 hover:text-brand-600 transition-colors"
+            >
+              <span>StewardOS · A product of MUJTEKNIFY</span>
+              <ExternalLink className="h-2.5 w-2.5 opacity-60 group-hover:opacity-100" />
+            </a>
           </div>
         </div>
       </aside>
@@ -146,14 +167,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="min-w-0 flex-1">
         {/* Desktop Top Header Bar */}
         <header className="hidden md:flex items-center justify-between border-b border-zinc-200/70 bg-white/80 px-8 py-3.5 backdrop-blur">
-          <div className="relative w-80">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="text"
-              placeholder="Search transactions, goals..."
-              className="w-full rounded-lg border border-zinc-200/80 bg-zinc-50/50 py-1.5 pl-9 pr-3 text-xs text-zinc-800 placeholder-zinc-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
+          <GlobalSearch />
 
           <div className="flex items-center gap-4">
             <Link

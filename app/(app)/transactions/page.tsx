@@ -1,4 +1,4 @@
-import { ListChecks, Plus, Download, Calendar, Search } from "lucide-react";
+import { Download, Search, Calendar, ChevronDown, ListChecks } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira } from "@/lib/finance/allocation-engine";
@@ -11,7 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 export default async function TransactionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; category?: string }>;
 }) {
   const params = await searchParams;
   const currentTab = params.tab || "all";
@@ -27,13 +27,13 @@ export default async function TransactionsPage({
       .select("id, txn_date, source, amount, description, accounts(name)")
       .eq("user_id", user?.id)
       .order("txn_date", { ascending: false })
-      .limit(50),
+      .limit(100),
     supabase
       .from("expense_transactions")
       .select("id, txn_date, reason, vendor, amount, receipt_status, budget_buckets(name), description")
       .eq("user_id", user?.id)
       .order("txn_date", { ascending: false })
-      .limit(50),
+      .limit(100),
     supabase
       .from("allocations")
       .select("id, planned_amount, status, budget_buckets(name), income_transaction_id")
@@ -54,7 +54,7 @@ export default async function TransactionsPage({
       type: "income" as const,
       date: t.txn_date,
       formattedDate: new Date(t.txn_date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
-      description: t.description || t.source || "Income",
+      description: t.description || t.source || "Salary / Payout",
       category: "Income",
       account: (t.accounts as { name?: string } | null)?.name || "Main Account",
       status: "Cleared",
@@ -67,7 +67,7 @@ export default async function TransactionsPage({
       type: "expense" as const,
       date: e.txn_date,
       formattedDate: new Date(e.txn_date).toLocaleDateString("en-US", { month: "short", day: "2-digit" }),
-      description: e.description || e.vendor || e.reason || "Expense",
+      description: e.description || e.vendor || e.reason || "Expense Outflow",
       category: e.budget_buckets?.name ?? "General",
       account: "Pocket Wallet",
       status: e.receipt_status === "verified" ? "Cleared" : "Pending",
@@ -82,34 +82,40 @@ export default async function TransactionsPage({
       ? allRows.filter((r) => r.type === "income")
       : currentTab === "expenses"
       ? allRows.filter((r) => r.type === "expense")
-      : currentTab === "allocations"
-      ? allRows.filter((r) => r.allocations.length > 0)
       : allRows;
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header with Title and Quick Actions */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header matching Figma desktop-transactions */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Transactions</h1>
           <p className="text-xs text-zinc-500">
-            View and track all your income, expenses, and allocations.
+            Keep track of all your income, expenses, and allocations.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
+
+        {/* Top Controls Bar */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search ledger..."
+              className="rounded-lg border border-zinc-200 bg-white py-1.5 pl-8 pr-3 text-xs text-zinc-800 placeholder-zinc-400 focus:border-brand-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600">
+            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+            <span>Aug 1, 2026 - Aug 31, 2026</span>
+          </div>
+
           <Link
             href="/api/export"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 active:scale-95"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition-all hover:bg-brand-600 active:scale-95"
           >
-            <Download className="h-3.5 w-3.5 text-zinc-500" />
             Export CSV
-          </Link>
-          <Link
-            href="/add"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            New Transaction
           </Link>
         </div>
       </div>
@@ -123,7 +129,6 @@ export default async function TransactionsPage({
               { id: "all", label: "All Transactions" },
               { id: "income", label: "Income" },
               { id: "expenses", label: "Expenses" },
-              { id: "allocations", label: "Allocations" },
             ].map((tab) => (
               <Link
                 key={tab.id}
@@ -139,14 +144,13 @@ export default async function TransactionsPage({
             ))}
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-zinc-400">
-              {filteredRows.length} total records
-            </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-zinc-400 font-medium">Category: All</span>
+            <span className="text-xs text-zinc-400 font-medium">Account: All</span>
           </div>
         </div>
 
-        {/* Data Table */}
+        {/* Data Table matching Figma desktop-transactions */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
@@ -202,10 +206,8 @@ export default async function TransactionsPage({
                     <td className="py-3.5 px-4 text-zinc-400">{tx.account}</td>
                     <td className="py-3.5 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                          tx.status === "Cleared"
-                            ? "bg-emerald-50 text-emerald-700"
-                            : "bg-amber-50 text-amber-700"
+                        className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                          tx.status === "Cleared" ? "text-zinc-700" : "text-amber-700"
                         }`}
                       >
                         <span
@@ -233,6 +235,46 @@ export default async function TransactionsPage({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Footer matching Figma desktop-transactions */}
+        {filteredRows.length > 0 && (
+          <div className="flex items-center justify-between border-t border-zinc-100 px-4 py-3 text-xs text-zinc-500">
+            <span>Showing 1-{Math.min(15, filteredRows.length)} of {filteredRows.length} transactions</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                disabled
+                className="rounded px-2.5 py-1 text-zinc-400 hover:bg-zinc-100 disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                className="rounded bg-brand-500 px-2.5 py-1 font-bold text-white shadow-xs"
+              >
+                1
+              </button>
+              <button
+                type="button"
+                className="rounded px-2.5 py-1 text-zinc-600 hover:bg-zinc-100"
+              >
+                2
+              </button>
+              <button
+                type="button"
+                className="rounded px-2.5 py-1 text-zinc-600 hover:bg-zinc-100"
+              >
+                3
+              </button>
+              <button
+                type="button"
+                className="rounded px-2.5 py-1 text-zinc-600 hover:bg-zinc-100"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

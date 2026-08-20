@@ -123,6 +123,18 @@ export async function createJournalEntry(formData: FormData) {
   redirect("/journal");
 }
 
+export async function deleteJournalEntry(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("financial_journal_entries")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/journal");
+}
+
 export async function updateNotificationPrefs(formData: FormData) {
   const { supabase, user } = await requireUser();
   const notification_email = String(formData.get("notification_email") || "");
