@@ -15,7 +15,7 @@ export default async function SettingsPage() {
   const [{ data: buckets }, { data: accounts }, { data: profile }] = await Promise.all([
     supabase.from("budget_buckets").select("*").eq("user_id", user!.id).order("sort_order"),
     supabase.from("accounts").select("id, name").eq("user_id", user!.id).order("name"),
-    supabase.from("profiles").select("*").eq("id", user!.id).single(),
+    supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle(),
   ]);
 
   const splitTotal = (buckets ?? [])

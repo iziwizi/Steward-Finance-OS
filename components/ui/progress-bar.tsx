@@ -4,10 +4,17 @@ export function ProgressBar({
   className = "",
 }: {
   percent: number;
-  tone?: "brand" | "danger" | "income";
+  tone?: "brand" | "danger" | "income" | "warning";
   className?: string;
 }) {
-  const fillClass = tone === "danger" ? "bg-expense" : tone === "income" ? "bg-income" : "bg-brand-500";
+  const fillClass =
+    tone === "danger"
+      ? "bg-expense"
+      : tone === "income"
+      ? "bg-income"
+      : tone === "warning"
+      ? "bg-pending"
+      : "bg-brand-500";
   return (
     <div className={`h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 ${className}`}>
       <div

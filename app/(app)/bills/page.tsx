@@ -1,8 +1,10 @@
-import { CreditCard } from "lucide-react";
+import { CreditCard, Check, AlertCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { createBill, markBillPaid } from "@/lib/actions/misc";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default async function BillsPage() {
   const supabase = await createClient();
@@ -10,49 +12,59 @@ export default async function BillsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const [{ data: bills }, { data: accounts }] = await Promise.all([
-    supabase.from("bills").select("*").eq("user_id", user!.id).order("next_due"),
-    supabase.from("accounts").select("id, name").eq("user_id", user!.id).order("name"),
+    supabase.from("bills").select("*").eq("user_id", user?.id).order("next_due"),
+    supabase.from("accounts").select("id, name").eq("user_id", user?.id).order("name"),
   ]);
 
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Bills</h1>
+    <div className="space-y-6 pb-6">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Recurring</p>
+        <h1 className="text-display-md text-zinc-900">Bills</h1>
+      </div>
 
-      <section className="space-y-2">
+      <section className="space-y-3">
         {(bills ?? []).map((b) => {
           const daysRemaining = b.next_due
             ? Math.ceil((new Date(b.next_due).getTime() - new Date(today).getTime()) / 86400000)
             : null;
           const overdue = daysRemaining !== null && daysRemaining < 0;
           return (
-            <div key={b.id} className="rounded-2xl border border-ink/10 bg-white p-4">
-              <div className="flex justify-between">
+            <div key={b.id} className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">
+              <div className="flex justify-between items-start">
                 <div>
-                  <p className="font-medium">{b.name}</p>
-                  <p className="text-xs text-ink/50">
-                    {b.frequency} · next due {b.next_due ?? "—"}
-                    {daysRemaining !== null && (
-                      <span className={overdue ? "text-danger" : ""}>
-                        {" "}
-                        ({overdue ? `${Math.abs(daysRemaining)}d overdue` : `${daysRemaining}d`})
-                      </span>
+                  <div className="flex items-center gap-2">
+                    <p className="text-base font-bold text-zinc-900">{b.name}</p>
+                    {overdue && (
+                      <Badge tone="danger">
+                        {Math.abs(daysRemaining!)}d overdue
+                      </Badge>
                     )}
+                    {!overdue && daysRemaining !== null && daysRemaining <= 3 && (
+                      <Badge tone="warning">
+                        Due in {daysRemaining}d
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {b.frequency} · Next due {b.next_due ?? "—"}
                   </p>
                 </div>
-                <p className="font-semibold">{formatNaira(Number(b.amount))}</p>
+                <p className="text-base font-bold text-zinc-900">{formatNaira(Number(b.amount))}</p>
               </div>
               <form
                 action={async () => {
                   "use server";
                   await markBillPaid(b.id);
                 }}
-                className="mt-2"
+                className="mt-3"
               >
-                <button className="tap-target rounded-xl bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent">
-                  Mark Paid
-                </button>
+                <Button type="submit" variant="secondary" className="px-3 py-1.5 text-xs">
+                  <Check className="h-3.5 w-3.5 mr-1" />
+                  Mark as Paid
+                </Button>
               </form>
             </div>
           );
@@ -66,57 +78,77 @@ export default async function BillsPage() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-ink/10 bg-white p-4">
-        <h2 className="text-sm font-semibold text-ink/70">Add Bill</h2>
-        <form action={createBill} className="mt-3 space-y-3">
-          <input
-            name="name"
-            placeholder="Bill name"
-            required
-            className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
-          />
-          <input
-            name="category"
-            placeholder="Category"
-            className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
-          />
-          <div className="flex gap-2">
+      <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-zinc-900">Add New Bill</h2>
+        <form action={createBill} className="mt-4 space-y-3.5">
+          <div>
+            <label className="text-xs font-semibold text-zinc-700">Bill Name</label>
             <input
-              name="amount"
-              type="number"
-              step="0.01"
-              placeholder="Amount (₦)"
+              name="name"
+              placeholder="e.g. Electricity / Internet"
               required
-              className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
+              className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
-            <select
-              name="frequency"
-              defaultValue="monthly"
-              className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
-            >
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
-            </select>
           </div>
-          <input
-            name="due_date"
-            type="date"
-            className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
-          />
-          <select
-            name="account_id"
-            className="tap-target w-full rounded-xl border border-ink/15 px-3 text-sm"
-          >
-            {(accounts ?? []).map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-          <button className="tap-target w-full rounded-xl bg-accent font-medium text-white">
+          <div>
+            <label className="text-xs font-semibold text-zinc-700">Category</label>
+            <input
+              name="category"
+              placeholder="e.g. Utilities"
+              className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">Amount (₦)</label>
+              <input
+                name="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                required
+                className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">Frequency</label>
+              <select
+                name="frequency"
+                defaultValue="monthly"
+                className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">Due Date</label>
+              <input
+                name="due_date"
+                type="date"
+                className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-zinc-700">Funding Account</label>
+              <select
+                name="account_id"
+                className="tap-target mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                {(accounts ?? []).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <Button type="submit" variant="primary" className="w-full mt-2">
             Add Bill
-          </button>
+          </Button>
         </form>
       </section>
     </div>

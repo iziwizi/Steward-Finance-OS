@@ -4,6 +4,8 @@ import type { PeriodPreset } from "@/lib/finance/allocation-engine";
 import { PeriodSelect } from "./period-select";
 import { generateInsights } from "@/lib/insights/generate";
 import { Lightbulb } from "lucide-react";
+import { StatCard } from "@/components/ui/stat-card";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 export default async function ReportsPage({
   searchParams,
@@ -29,86 +31,92 @@ export default async function ReportsPage({
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Reports</h1>
+    <div className="space-y-6 pb-6">
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Analytics</p>
+        <h1 className="text-display-md text-zinc-900">Reports</h1>
+      </div>
 
       <PeriodSelect defaultValue={period} />
 
-      <p className="text-xs text-ink/50">
-        {data.period.start} — {data.period.end}
+      <p className="text-xs text-zinc-400">
+        Period: {data.period.start} — {data.period.end}
       </p>
 
       {insights.length > 0 && (
-        <section className="rounded-2xl border border-ink/10 bg-white p-4">
-          <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink/70">
-            <Lightbulb className="h-4 w-4 text-gold" /> Insights
+        <section className="rounded-xl border border-amber-200/80 bg-amber-50/50 p-5 shadow-sm">
+          <h2 className="flex items-center gap-1.5 text-sm font-bold text-zinc-900">
+            <Lightbulb className="h-4 w-4 text-amber-600" /> Key Insights
           </h2>
-          <ul className="mt-2 space-y-1.5 text-sm text-ink/70">
+          <ul className="mt-2.5 space-y-1.5 text-xs text-zinc-600 leading-relaxed">
             {insights.map((i, idx) => (
-              <li key={idx}>{i}</li>
+              <li key={idx}>• {i}</li>
             ))}
           </ul>
         </section>
       )}
 
       <section className="grid grid-cols-2 gap-3">
-        <SummaryCard label="Income" value={formatNaira(data.totalIncome)} />
-        <SummaryCard label="Expenses" value={formatNaira(data.totalExpenses)} />
-        <SummaryCard label="Net Cash Flow" value={formatNaira(data.netCashFlow)} wide />
+        <StatCard label="Income" value={formatNaira(data.totalIncome)} tone="income" />
+        <StatCard label="Expenses" value={formatNaira(data.totalExpenses)} tone="expense" />
+        <StatCard
+          label="Net Cash Flow"
+          value={formatNaira(data.netCashFlow)}
+          className="col-span-2"
+        />
       </section>
 
-      <section className="rounded-2xl border border-ink/10 bg-white p-4">
-        <h2 className="text-sm font-semibold text-ink/70">Planned vs Sent vs Pending</h2>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-sm">
+      <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-zinc-900">Planned vs Sent vs Pending</h2>
+        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-sm">
           <div>
-            <p className="font-semibold">{formatNaira(data.allocationSummary.totalPlanned)}</p>
-            <p className="text-xs text-ink/50">Planned</p>
+            <p className="text-financial-caption font-bold text-zinc-900">
+              {formatNaira(data.allocationSummary.totalPlanned)}
+            </p>
+            <p className="text-xs text-zinc-400 mt-0.5">Planned</p>
           </div>
           <div>
-            <p className="font-semibold text-accent">
+            <p className="text-financial-caption font-bold text-emerald-600">
               {formatNaira(data.allocationSummary.totalSent)}
             </p>
-            <p className="text-xs text-ink/50">Sent</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Sent</p>
           </div>
           <div>
-            <p className="font-semibold text-gold">
+            <p className="text-financial-caption font-bold text-amber-600">
               {formatNaira(data.allocationSummary.totalPending)}
             </p>
-            <p className="text-xs text-ink/50">Pending</p>
+            <p className="text-xs text-zinc-400 mt-0.5">Pending</p>
           </div>
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gold/30 bg-gold/5 p-4">
-        <h2 className="text-sm font-semibold text-ink/70">Tithe Status</h2>
-        <p className="mt-1 text-lg font-semibold">
-          {formatNaira(data.titheSummary.totalSent)} sent of{" "}
-          {formatNaira(data.titheSummary.totalPlanned)}
+      <section className="rounded-xl border border-amber-200/70 bg-amber-50/50 p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-zinc-900">Tithe & Giving Status</h2>
+        <p className="mt-2 text-financial-md font-bold text-zinc-900">
+          {formatNaira(data.titheSummary.totalSent)} <span className="text-xs font-normal text-zinc-500">sent of {formatNaira(data.titheSummary.totalPlanned)}</span>
         </p>
       </section>
 
-      <section className="rounded-2xl border border-ink/10 bg-white p-4">
-        <h2 className="text-sm font-semibold text-ink/70">Bucket Performance</h2>
-        <div className="mt-3 space-y-2">
+      <section className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
+        <h2 className="text-sm font-bold text-zinc-900">Bucket Performance</h2>
+        <div className="mt-4 space-y-3.5">
           {data.budgetHealth.map((b) => (
-            <div key={b.bucketId} className="flex justify-between text-sm">
-              <span>{b.bucketName}</span>
-              <span className={b.warning ? "text-danger" : "text-ink/60"}>
-                {formatNaira(b.spent)} / {formatNaira(b.allocated)} ({b.percentUsed}%)
-              </span>
+            <div key={b.bucketId}>
+              <div className="flex justify-between text-xs font-medium">
+                <span className="text-zinc-900">{b.bucketName}</span>
+                <span className={b.warning ? "text-rose-600 font-bold" : "text-zinc-500"}>
+                  {formatNaira(b.spent)} / {formatNaira(b.allocated)} ({b.percentUsed}%)
+                </span>
+              </div>
+              <ProgressBar
+                percent={b.percentUsed}
+                tone={b.warning ? "danger" : "brand"}
+                className="mt-1.5 h-2"
+              />
             </div>
           ))}
         </div>
       </section>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
-  return (
-    <div className={`rounded-2xl border border-ink/10 bg-white p-4 ${wide ? "col-span-2" : ""}`}>
-      <p className="text-xs text-ink/50">{label}</p>
-      <p className="mt-1 text-xl font-semibold">{value}</p>
     </div>
   );
 }
