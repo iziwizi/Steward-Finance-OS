@@ -2,37 +2,80 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ArrowLeftRight, PlusCircle, Target, Menu } from "lucide-react";
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  Target,
+  BarChart3,
+  CalendarCheck,
+  PieChart,
+  Receipt,
+  RefreshCw,
+  Sparkles,
+  BookOpen,
+  Settings,
+  PlusCircle,
+  Menu,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-// Icons resolved here, client-side, keyed by href — never passed in as a
-// prop from the server layout. A React component reference is a function,
-// and Server Components cannot serialize a function into a Client
-// Component's props (only plain data can cross that boundary); doing so
-// throws "Functions cannot be passed directly to Client Components" and
-// crashes the whole route on every render.
 const ICONS: Record<string, LucideIcon> = {
-  "/dashboard": Home,
+  "/dashboard": LayoutDashboard,
   "/transactions": ArrowLeftRight,
-  "/add": PlusCircle,
   "/goals": Target,
+  "/reports": BarChart3,
+  "/monthly-review": CalendarCheck,
+  "/allocations": PieChart,
+  "/settings": Settings,
+  "/bills": Receipt,
+  "/subscriptions": RefreshCw,
+  "/insights": Sparkles,
+  "/celebrations": Sparkles,
+  "/journal": BookOpen,
+  "/add": PlusCircle,
   "/more": Menu,
 };
 
-export function SidebarLink({ href, label }: { href: string; label: string }) {
+export function SidebarLink({
+  href,
+  label,
+  badge,
+}: {
+  href: string;
+  label: string;
+  badge?: string | number;
+}) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-  const Icon = ICONS[href];
+  const Icon = ICONS[href] || LayoutDashboard;
 
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors duration-fast ${
-        active ? "bg-brand-50 font-semibold text-brand-500" : "font-medium text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800"
+      className={`group flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold transition-all duration-fast ${
+        active
+          ? "bg-brand-50 text-brand-600 shadow-sm"
+          : "text-zinc-500 hover:bg-zinc-100/70 hover:text-zinc-900"
       }`}
     >
-      {Icon && <Icon className="h-[18px] w-[18px]" strokeWidth={1.75} />}
-      {label}
+      <div className="flex items-center gap-2.5">
+        <Icon
+          className={`h-4 w-4 transition-colors ${
+            active ? "text-brand-600" : "text-zinc-400 group-hover:text-zinc-700"
+          }`}
+          strokeWidth={1.8}
+        />
+        <span>{label}</span>
+      </div>
+      {badge !== undefined && (
+        <span
+          className={`flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold ${
+            active ? "bg-brand-600 text-white" : "bg-zinc-100 text-zinc-600"
+          }`}
+        >
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -40,17 +83,17 @@ export function SidebarLink({ href, label }: { href: string; label: string }) {
 export function BottomNavLink({ href, label }: { href: string; label: string }) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
-  const Icon = ICONS[href];
+  const Icon = ICONS[href] || LayoutDashboard;
 
   return (
     <Link
       href={href}
       className={`tap-target flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors duration-fast ${
-        active ? "text-brand-500" : "text-zinc-400"
+        active ? "text-brand-500 font-semibold" : "text-zinc-400 font-normal"
       }`}
     >
-      {Icon && <Icon className="h-6 w-6" strokeWidth={1.75} />}
-      <span className="text-[11px] font-medium">{label}</span>
+      <Icon className="h-5 w-5" strokeWidth={1.75} />
+      <span className="text-[11px]">{label}</span>
     </Link>
   );
 }

@@ -1,16 +1,33 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Bell } from "lucide-react";
+import { Bell, Search, Plus, LogOut, Settings as SettingsIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/data/ensure-profile";
 import { ConnectionBanner } from "./connection-banner";
 import { SidebarLink, BottomNavLink } from "./nav-link";
 import { Logo } from "@/components/logo";
+import { logOut } from "@/lib/actions/auth";
 
-// href/label only — plain strings are the only thing this Server Component
-// may hand to the client SidebarLink/BottomNavLink below. Icons are resolved
-// inside nav-link.tsx itself; see the comment there for why.
-const NAV = [
+const DESKTOP_NAV_MAIN = [
+  { href: "/dashboard", label: "Overview" },
+  { href: "/transactions", label: "Transactions" },
+  { href: "/goals", label: "Goals" },
+  { href: "/reports", label: "Reports" },
+  { href: "/monthly-review", label: "Monthly Review" },
+];
+
+const DESKTOP_NAV_PLANNING = [
+  { href: "/settings", label: "Allocations" },
+  { href: "/bills", label: "Bills" },
+  { href: "/subscriptions", label: "Subscriptions" },
+];
+
+const DESKTOP_NAV_INSIGHTS = [
+  { href: "/celebrations", label: "Insights & Celebrations" },
+  { href: "/journal", label: "Financial Journal" },
+];
+
+const MOBILE_NAV = [
   { href: "/dashboard", label: "Home" },
   { href: "/transactions", label: "Transactions" },
   { href: "/add", label: "Add" },
@@ -35,31 +52,131 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .is("read_at", null),
-    supabase.from("profiles").select("onboarding_completed_at").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
   ]);
   const unreadCount = count ?? 0;
   if (!profile?.onboarding_completed_at) {
     redirect("/onboarding/welcome");
   }
 
+  const userName = profile?.full_name || user.email?.split("@")[0] || "User";
+  const userInitials = userName
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
+
   return (
     <div className="min-h-dvh bg-paper pb-20 md:flex md:pb-0">
       <ConnectionBanner />
 
-      {/* Desktop sidebar — same nav items as mobile, laid out vertically. */}
-      <nav className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-60 md:shrink-0 md:flex-col md:border-r md:border-zinc-200 md:bg-white md:py-6">
-        <div className="px-5">
-          <Logo />
-        </div>
-        <div className="mt-8 flex flex-1 flex-col gap-1 px-3">
-          {NAV.map((item) => (
-            <SidebarLink key={item.href} {...item} />
-          ))}
-        </div>
-      </nav>
+      {/* Figma Desktop Sidebar */}
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:justify-between md:border-r md:border-zinc-200/80 md:bg-white md:px-4 md:py-6">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <Logo />
+            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-600">
+              v1.0.4
+            </span>
+          </div>
 
+          <div className="space-y-5">
+            <nav className="space-y-1">
+              {DESKTOP_NAV_MAIN.map((item) => (
+                <SidebarLink key={item.href} {...item} />
+              ))}
+            </nav>
+
+            <div className="space-y-1">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Planning
+              </p>
+              {DESKTOP_NAV_PLANNING.map((item) => (
+                <SidebarLink key={item.href} {...item} />
+              ))}
+            </div>
+
+            <div className="space-y-1">
+              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                Insights
+              </p>
+              {DESKTOP_NAV_INSIGHTS.map((item) => (
+                <SidebarLink key={item.href} {...item} />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* User Card at bottom of sidebar */}
+        <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 font-bold text-white text-xs">
+                {userInitials}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold text-zinc-900">{userName}</p>
+                <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Link
+                href="/settings"
+                className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                title="Settings"
+              >
+                <SettingsIcon className="h-3.5 w-3.5" />
+              </Link>
+              <form action={logOut}>
+                <button
+                  type="submit"
+                  className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-rose-600"
+                  title="Log out"
+                >
+                  <LogOut className="h-3.5 w-3.5" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
       <div className="min-w-0 flex-1">
-        <header className="mx-auto flex max-w-lg items-center justify-end px-4 pt-4 md:max-w-5xl md:px-8">
+        {/* Desktop Top Header Bar */}
+        <header className="hidden md:flex items-center justify-between border-b border-zinc-200/70 bg-white/80 px-8 py-3.5 backdrop-blur">
+          <div className="relative w-80">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              placeholder="Search transactions, goals..."
+              className="w-full rounded-lg border border-zinc-200/80 bg-zinc-50/50 py-1.5 pl-9 pr-3 text-xs text-zinc-800 placeholder-zinc-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/add"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              New Transaction
+            </Link>
+
+            <Link href="/notifications" className="relative flex items-center justify-center p-1">
+              <Bell className="h-5 w-5 text-zinc-500 hover:text-zinc-800 transition-colors" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-expense px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          </div>
+        </header>
+
+        {/* Mobile Header (Bell only) */}
+        <header className="mx-auto flex max-w-lg items-center justify-end px-4 pt-4 md:hidden">
           <Link href="/notifications" className="tap-target relative flex items-center justify-center">
             <Bell className="h-6 w-6 text-zinc-500" strokeWidth={1.75} />
             {unreadCount > 0 && (
@@ -69,13 +186,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             )}
           </Link>
         </header>
-        <div className="mx-auto max-w-lg px-4 md:max-w-5xl md:px-8">{children}</div>
+
+        <main className="mx-auto max-w-lg px-4 pt-4 md:max-w-7xl md:px-8 md:pt-6">{children}</main>
       </div>
 
-      {/* Mobile bottom nav — replaced by the sidebar at md and up. */}
-      <nav className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white/95 backdrop-blur md:hidden">
+      {/* Mobile Bottom Nav */}
+      <nav className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white/95 backdrop-blur md:hidden z-40">
         <div className="mx-auto flex max-w-lg items-stretch justify-between px-2">
-          {NAV.map((item) => (
+          {MOBILE_NAV.map((item) => (
             <BottomNavLink key={item.href} {...item} />
           ))}
         </div>
