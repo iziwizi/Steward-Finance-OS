@@ -1,18 +1,21 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Home, ArrowLeftRight, PlusCircle, Target, Menu, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ensureProfile } from "@/lib/data/ensure-profile";
 import { ConnectionBanner } from "./connection-banner";
 import { SidebarLink, BottomNavLink } from "./nav-link";
 import { Logo } from "@/components/logo";
 
+// href/label only — plain strings are the only thing this Server Component
+// may hand to the client SidebarLink/BottomNavLink below. Icons are resolved
+// inside nav-link.tsx itself; see the comment there for why.
 const NAV = [
-  { href: "/dashboard", label: "Home", icon: Home },
-  { href: "/transactions", label: "Transactions", icon: ArrowLeftRight },
-  { href: "/add", label: "Add", icon: PlusCircle },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/more", label: "More", icon: Menu },
+  { href: "/dashboard", label: "Home" },
+  { href: "/transactions", label: "Transactions" },
+  { href: "/add", label: "Add" },
+  { href: "/goals", label: "Goals" },
+  { href: "/more", label: "More" },
 ];
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
