@@ -24,12 +24,19 @@ async function award(
   message: string,
   relatedEntity: string = ""
 ) {
-  await supabase
-    .from("celebrations")
-    .upsert(
-      { user_id: userId, type, title, message, related_entity: relatedEntity },
-      { onConflict: "user_id,type,related_entity", ignoreDuplicates: true }
-    );
+  try {
+    const { error } = await supabase
+      .from("celebrations")
+      .upsert(
+        { user_id: userId, type, title, message, related_entity: relatedEntity },
+        { onConflict: "user_id,type,related_entity", ignoreDuplicates: true }
+      );
+    if (error) {
+      console.error("[celebrations:award] failed", { code: error.code, message: error.message });
+    }
+  } catch (err) {
+    console.error("[celebrations:award] unexpected error", err);
+  }
 }
 
 export async function celebrateFirstIncome(supabase: SupabaseClient, userId: string) {

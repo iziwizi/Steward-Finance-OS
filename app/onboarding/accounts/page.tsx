@@ -10,10 +10,13 @@ export default async function OnboardingAccountsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
   const { data: accounts } = await supabase
     .from("accounts")
     .select("id, name, institution")
-    .eq("user_id", user!.id)
+    .eq("user_id", user.id)
     .order("name");
 
   return (

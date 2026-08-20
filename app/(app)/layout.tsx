@@ -20,19 +20,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  let unreadCount = 0;
-  if (user) {
-    await ensureProfile(supabase, user);
-    const [{ count }, { data: profile }] = await Promise.all([
-      supabase
-        .from("in_app_notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .is("read_at", null),
-      supabase.from("profiles").select("onboarding_completed_at").eq("id", user.id).single(),
-    ]);
-    unreadCount = count ?? 0;
-    if (!profile?.onboarding_completed_at) redirect("/onboarding/welcome");
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  await ensureProfile(supabase, user);
+  const [{ count }, { data: profile }] = await Promise.all([
+    supabase
+      .from("in_app_notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .is("read_at", null),
+    supabase.from("profiles").select("onboarding_completed_at").eq("id", user.id).maybeSingle(),
+  ]);
+  const unreadCount = count ?? 0;
+  if (!profile?.onboarding_completed_at) {
+    redirect("/onboarding/welcome");
   }
 
   return (

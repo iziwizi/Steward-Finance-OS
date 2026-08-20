@@ -29,11 +29,14 @@ export default async function OnboardingPersonalPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, currency, timezone")
-    .eq("id", user!.id)
-    .single();
+    .eq("id", user.id)
+    .maybeSingle();
 
   return (
     <main className="min-h-dvh bg-paper px-6 py-8">

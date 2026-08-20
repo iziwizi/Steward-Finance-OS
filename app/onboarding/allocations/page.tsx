@@ -7,10 +7,13 @@ export default async function OnboardingAllocationsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
   const { data: buckets } = await supabase
     .from("budget_buckets")
     .select("id, name, target_percent")
-    .eq("user_id", user!.id)
+    .eq("user_id", user.id)
     .eq("is_income_split", true)
     .order("sort_order");
 
