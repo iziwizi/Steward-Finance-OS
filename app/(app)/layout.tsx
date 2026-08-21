@@ -60,14 +60,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     redirect("/onboarding/welcome");
   }
 
-  const userName = profile?.full_name || user.email?.split("@")[0] || "User";
+  const userName = profile?.full_name || (user.user_metadata as any)?.full_name || user.email?.split("@")[0] || "User";
   const userInitials = userName
     .split(" ")
     .map((n: string) => n[0])
     .join("")
     .toUpperCase()
     .slice(0, 2) || "MA";
-  const avatarUrl = profile?.avatar_url || null;
+  const avatarUrl = profile?.avatar_url || (user.user_metadata as any)?.avatar_url || null;
 
   return (
     <div className="min-h-dvh bg-paper pb-20 md:flex md:pb-0">
@@ -77,10 +77,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:justify-between md:border-r md:border-zinc-200/80 md:bg-white md:px-4 md:py-6">
         <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
-            <Logo />
-            <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-600">
-              v1.0.4
-            </span>
+            <Logo size="md" />
           </div>
 
           <div className="space-y-5">
@@ -110,8 +107,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        {/* User Card & Branding at bottom of sidebar */}
-        <div className="space-y-3">
+        {/* User Card & Branding at bottom of sidebar with proper spacing and separation */}
+        <div className="space-y-3 pt-6 border-t border-zinc-100 mt-auto">
           <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -156,7 +153,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               rel="noopener noreferrer"
               className="group inline-flex items-center gap-1 text-[10px] font-medium text-zinc-400 hover:text-brand-600 transition-colors"
             >
-              <span>StewardOS · A product of MUJTEKNIFY</span>
+              <span>A Product of MUJTEKNIFY · © 2026</span>
               <ExternalLink className="h-2.5 w-2.5 opacity-60 group-hover:opacity-100" />
             </a>
           </div>
@@ -189,10 +186,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Mobile Header (Bell only) */}
-        <header className="mx-auto flex max-w-lg items-center justify-end px-4 pt-4 md:hidden">
+        {/* Mobile Header */}
+        <header className="mx-auto flex max-w-lg items-center justify-between px-4 pt-4 md:hidden">
+          <Logo size="sm" />
           <Link href="/notifications" className="tap-target relative flex items-center justify-center">
-            <Bell className="h-6 w-6 text-zinc-500" strokeWidth={1.75} />
+            <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
             {unreadCount > 0 && (
               <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-expense text-[10px] font-medium text-white">
                 {unreadCount > 9 ? "9+" : unreadCount}

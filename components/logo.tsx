@@ -1,12 +1,59 @@
-import { Leaf } from "lucide-react";
+import Image from "next/image";
 
-export function Logo({ className = "" }: { className?: string }) {
+export function Logo({
+  className = "",
+  size = "md",
+  showWordmark = true,
+}: {
+  className?: string;
+  size?: "sm" | "md" | "lg";
+  showWordmark?: boolean;
+}) {
+  const iconSizes = {
+    sm: "h-6 w-6",
+    md: "h-7 w-7",
+    lg: "h-9 w-9",
+  };
+
+  const textSizes = {
+    sm: "text-base",
+    md: "text-lg",
+    lg: "text-xl",
+  };
+
   return (
-    <div className={`flex items-center gap-1.5 ${className}`}>
-      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand-500">
-        <Leaf className="h-3.5 w-3.5 text-white" strokeWidth={2} />
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      <div className={`relative ${iconSizes[size]} shrink-0 overflow-hidden rounded-lg`}>
+        <Image
+          src="/brand/icon.png"
+          alt="StewardOS Icon"
+          width={36}
+          height={36}
+          className="h-full w-full object-contain"
+          priority
+        />
       </div>
-      <span className="text-lg font-bold text-zinc-900">StewardOS</span>
+      {showWordmark && (
+        <div className="flex flex-col">
+          <span className={`font-bold tracking-tight text-zinc-900 leading-none ${textSizes[size]}`}>
+            StewardOS
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function WordmarkLogo({ className = "" }: { className?: string }) {
+  return (
+    <div className={`relative h-10 w-48 ${className}`}>
+      <Image
+        src="/brand/logo.png"
+        alt="StewardOS — FAITHFUL. WISE. PROSPEROUS."
+        fill
+        className="object-contain"
+        priority
+      />
     </div>
   );
 }

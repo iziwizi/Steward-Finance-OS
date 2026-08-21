@@ -4,12 +4,9 @@ import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-eng
 import { createClient } from "@/lib/supabase/server";
 import { markCelebrationSeen } from "@/lib/actions/celebrations";
 import { getTimeOfDayGreeting, getUserFirstName } from "@/lib/utils/greeting";
-import {
-  Sparkles,
-  Zap,
-  Calendar,
-} from "lucide-react";
+import { Sparkles, Zap, Calendar } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { TodaysDecisions } from "@/components/todays-decisions";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -17,15 +14,44 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: profile }, data] = await Promise.all([
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const [
+    { data: profile },
+    { data: todayDecision },
+    { data: todayIncome },
+    { data: todayExpense },
+    data,
+  ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle(),
+    supabase
+      .from("daily_decisions")
+      .select("*")
+      .eq("user_id", user?.id)
+      .eq("decision_date", todayStr)
+      .maybeSingle(),
+    supabase
+      .from("income_transactions")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("txn_date", todayStr)
+      .limit(1),
+    supabase
+      .from("expense_transactions")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("txn_date", todayStr)
+      .limit(1),
     getDashboardData("current_month"),
   ]);
 
   const firstName = getUserFirstName(profile?.full_name, user?.email);
   const timeGreeting = getTimeOfDayGreeting();
 
-  // Build combined recent transactions table data matching Figma desktop spec
+  const hasIncomeToday = (todayIncome ?? []).length > 0;
+  const hasExpensesToday = (todayExpense ?? []).length > 0;
+
+  // Build combined recent transactions table data
   const recentTransactions = [
     ...data.recentIncome.map((i) => ({
       id: `inc-${i.id}`,
@@ -84,6 +110,13 @@ export default async function DashboardPage() {
           </p>
         </div>
       </div>
+
+      {/* Today's Decisions Section */}
+      <TodaysDecisions
+        existingDecision={todayDecision ?? null}
+        hasIncomeToday={hasIncomeToday}
+        hasExpensesToday={hasExpensesToday}
+      />
 
       {/* Celebration Banner if present */}
       {data.latestCelebration && (
@@ -416,7 +449,7 @@ export default async function DashboardPage() {
           <Zap className="h-4 w-4" />
         </div>
         <p className="text-xs font-medium text-brand-950">
-          You've spent 12% less this month than last month. Your savings rate is 75.8%. Keep it up.
+          Steward Insight: Your financial workspace is active. Record daily transactions and confirm envelopes to maintain high stewardship health.
         </p>
       </div>
     </div>

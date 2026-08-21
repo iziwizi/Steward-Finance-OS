@@ -45,7 +45,13 @@ export default async function OnboardingAccountsPage() {
           </div>
         )}
 
-        <form action={createAccount} className="mt-6 space-y-3 border-t border-zinc-100 pt-6">
+        <form
+          action={async (formData) => {
+            "use server";
+            await createAccount(formData);
+          }}
+          className="mt-6 space-y-3 border-t border-zinc-100 pt-6"
+        >
           <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500">
             Add another account
           </p>

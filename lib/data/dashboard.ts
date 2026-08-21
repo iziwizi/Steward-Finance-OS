@@ -9,16 +9,28 @@ import {
 } from "@/lib/finance/allocation-engine";
 import { celebratePositiveCashFlow } from "@/lib/celebrations/evaluate";
 
-export async function getDashboardData(period: PeriodPreset = "current_month") {
+export async function getDashboardData(
+  period: PeriodPreset = "current_month",
+  customRange?: { start: string; end: string }
+) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { start, end } = resolvePeriod(period);
+  const { start, end } = customRange ? customRange : resolvePeriod(period);
 
-  const [incomeRes, expenseRes, allocRes, bucketsRes, goalsRes, billsRes] = await Promise.all([
+  const [
+    incomeRes,
+    expenseRes,
+    allocRes,
+    bucketsRes,
+    goalsRes,
+    billsRes,
+    allIncomeHistoryRes,
+    allExpenseHistoryRes,
+  ] = await Promise.all([
     supabase
       .from("income_transactions")
       .select("id, txn_date, source, amount, description, accounts(name)")
@@ -42,6 +54,17 @@ export async function getDashboardData(period: PeriodPreset = "current_month") {
     supabase.from("budget_buckets").select("*").eq("user_id", user.id).order("sort_order"),
     supabase.from("goals").select("*").eq("user_id", user.id).order("target_date"),
     supabase.from("bills").select("*").eq("user_id", user.id).eq("status", "active"),
+    // Historical trends for the last 6 months
+    supabase
+      .from("income_transactions")
+      .select("txn_date, amount")
+      .eq("user_id", user.id)
+      .gte("txn_date", new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10)),
+    supabase
+      .from("expense_transactions")
+      .select("txn_date, amount")
+      .eq("user_id", user.id)
+      .gte("txn_date", new Date(Date.now() - 180 * 86400000).toISOString().slice(0, 10)),
   ]);
 
   const income = incomeRes.data ?? [];
@@ -116,6 +139,37 @@ export async function getDashboardData(period: PeriodPreset = "current_month") {
     .limit(1)
     .maybeSingle();
 
+  // Compute 6-month real historical bars
+  const historyMap: Record<string, { income: number; expense: number; monthName: string }> = {};
+  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    historyMap[key] = {
+      income: 0,
+      expense: 0,
+      monthName: monthNames[d.getMonth()],
+    };
+  }
+
+  (allIncomeHistoryRes.data ?? []).forEach((i) => {
+    const mKey = i.txn_date.slice(0, 7);
+    if (historyMap[mKey]) {
+      historyMap[mKey].income += Number(i.amount);
+    }
+  });
+
+  (allExpenseHistoryRes.data ?? []).forEach((e) => {
+    const mKey = e.txn_date.slice(0, 7);
+    if (historyMap[mKey]) {
+      historyMap[mKey].expense += Number(e.amount);
+    }
+  });
+
+  const monthlyHistory = Object.values(historyMap);
+
   return {
     period: { start, end },
     totalIncome,
@@ -128,6 +182,7 @@ export async function getDashboardData(period: PeriodPreset = "current_month") {
     titheSummary,
     goals,
     bills,
+    monthlyHistory,
     recentIncome: income.slice(0, 5),
     recentExpenses: expenses.slice(0, 5),
     latestCelebration,

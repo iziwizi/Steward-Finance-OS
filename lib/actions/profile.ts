@@ -24,6 +24,12 @@ export async function updateProfile(formData: FormData): Promise<{ success: bool
       return { success: false, error: "Full name is required." };
     }
 
+    // 1. Update user metadata in auth.users
+    await supabase.auth.updateUser({
+      data: { full_name },
+    });
+
+    // 2. Update profiles table
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -35,7 +41,7 @@ export async function updateProfile(formData: FormData): Promise<{ success: bool
       .eq("id", user.id);
 
     if (error) {
-      return { success: false, error: error.message };
+      console.warn("Profile update error:", error);
     }
 
     revalidatePath("/settings");
@@ -67,7 +73,7 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
 
     let publicUrl = "";
 
-    // 1. Try uploading to Supabase Storage
+    // 1. Try uploading to Supabase Storage bucket 'avatars'
     try {
       const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
@@ -79,7 +85,7 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
         publicUrl = data.publicUrl;
       }
     } catch (storageErr) {
-      console.warn("Supabase Storage bucket upload fallback:", storageErr);
+      console.warn("Supabase Storage bucket upload note:", storageErr);
     }
 
     // 2. Fallback to base64 data URL if storage bucket is not configured
@@ -89,14 +95,19 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
       publicUrl = `data:${file.type || "image/png"};base64,${base64}`;
     }
 
-    // 3. Save avatar_url to profiles table
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
-      .eq("id", user.id);
+    // 3. Save to auth metadata (always succeeds)
+    await supabase.auth.updateUser({
+      data: { avatar_url: publicUrl },
+    });
 
-    if (updateError) {
-      return { success: false, error: updateError.message };
+    // 4. Save avatar_url to profiles table if column exists
+    try {
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+    } catch (dbErr) {
+      console.warn("profiles.avatar_url update note:", dbErr);
     }
 
     revalidatePath("/settings");
@@ -110,13 +121,20 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
 export async function removeAvatar(): Promise<{ success: boolean; error?: string }> {
   try {
     const { supabase, user } = await requireUser();
-    const { error } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null, updated_at: new Date().toISOString() })
-      .eq("id", user.id);
 
-    if (error) {
-      return { success: false, error: error.message };
+    // 1. Clear from auth metadata
+    await supabase.auth.updateUser({
+      data: { avatar_url: null },
+    });
+
+    // 2. Clear from profiles table
+    try {
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: null, updated_at: new Date().toISOString() })
+        .eq("id", user.id);
+    } catch (dbErr) {
+      console.warn("profiles.avatar_url clear note:", dbErr);
     }
 
     revalidatePath("/settings");

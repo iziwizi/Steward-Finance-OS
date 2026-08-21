@@ -6,32 +6,33 @@ import {
   Heart,
   BookOpen,
   CalendarCheck,
-  ListTodo,
   BarChart3,
   Settings,
   Sparkles,
   ChevronRight,
+  PieChart,
+  CalendarCheck2,
 } from "lucide-react";
 
 const ITEMS = [
-  { href: "/today", label: "Today's Decisions", icon: ListTodo, desc: "Quick daily financial checklist" },
-  { href: "/celebrations", label: "Celebration Center", icon: Sparkles, desc: "Milestones and financial wins" },
+  { href: "/allocations", label: "Allocations Center", icon: PieChart, desc: "Envelope splits & funding accounts" },
+  { href: "/celebrations", label: "Insights & Celebrations", icon: Sparkles, desc: "Pattern analysis & financial wins" },
   { href: "/reports", label: "Reports", icon: BarChart3, desc: "Cash flow & allocation breakdown" },
   { href: "/monthly-review", label: "Monthly Review", icon: CalendarCheck, desc: "End of month summary" },
   { href: "/bills", label: "Bills", icon: Receipt, desc: "Manage recurring bills & due dates" },
   { href: "/subscriptions", label: "Subscriptions", icon: RefreshCw, desc: "Active recurring subscriptions" },
   { href: "/assets", label: "Assets", icon: Gem, desc: "Track property & high value assets" },
   { href: "/wishlist", label: "Wish List", icon: Heart, desc: "Future purchases & savings list" },
-  { href: "/journal", label: "Financial Journal", icon: BookOpen, desc: "Notes on financial decisions" },
-  { href: "/settings", label: "Settings", icon: Settings, desc: "Buckets, profile & app preferences" },
+  { href: "/journal", label: "Financial Journal", icon: BookOpen, desc: "Strategic reflections & stewardship" },
+  { href: "/settings", label: "Settings", icon: Settings, desc: "Profile, buckets & linked accounts" },
 ];
 
 export default function MorePage() {
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-5 pb-8">
       <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Navigation</p>
-        <h1 className="text-display-md text-zinc-900">More</h1>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Navigation</p>
+        <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">More Menus</h1>
       </div>
       <div className="space-y-2">
         {ITEMS.map(({ href, label, icon: Icon, desc }) => (

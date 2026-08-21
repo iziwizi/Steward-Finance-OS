@@ -25,3 +25,6 @@ env.download
 npm-debug.log*
 coverage/
 .claude/
+
+# reference files
+Figma Screenshots/

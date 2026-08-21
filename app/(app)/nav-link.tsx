@@ -14,14 +14,17 @@ import {
   Sparkles,
   BookOpen,
   Settings,
-  PlusCircle,
+  Plus,
   Menu,
+  MoreHorizontal,
+  Home,
+  List,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
-  "/dashboard": LayoutDashboard,
-  "/transactions": ArrowLeftRight,
+  "/dashboard": Home,
+  "/transactions": List,
   "/goals": Target,
   "/reports": BarChart3,
   "/monthly-review": CalendarCheck,
@@ -32,8 +35,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/insights": Sparkles,
   "/celebrations": Sparkles,
   "/journal": BookOpen,
-  "/add": PlusCircle,
-  "/more": Menu,
+  "/add": Plus,
+  "/more": MoreHorizontal,
 };
 
 export function SidebarLink({
@@ -85,15 +88,30 @@ export function BottomNavLink({ href, label }: { href: string; label: string }) 
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
   const Icon = ICONS[href] || LayoutDashboard;
 
+  // Middle Add Button rendered as dark teal circular FAB matching Figma Mobile
+  if (href === "/add") {
+    return (
+      <Link
+        href="/add"
+        aria-label="Add transaction"
+        className="flex flex-1 items-center justify-center -translate-y-2"
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500 text-white shadow-md transition-transform active:scale-90 hover:bg-brand-600">
+          <Plus className="h-6 w-6 stroke-[2.5]" />
+        </div>
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={href}
       className={`tap-target flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors duration-fast ${
-        active ? "text-brand-500 font-semibold" : "text-zinc-400 font-normal"
+        active ? "text-brand-600 font-semibold" : "text-zinc-400 font-normal hover:text-zinc-600"
       }`}
     >
-      <Icon className="h-5 w-5" strokeWidth={1.75} />
-      <span className="text-[11px]">{label}</span>
+      <Icon className="h-5 w-5" strokeWidth={active ? 2 : 1.75} />
+      <span className="text-[10px]">{label}</span>
     </Link>
   );
 }

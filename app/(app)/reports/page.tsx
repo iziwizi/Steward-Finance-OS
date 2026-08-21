@@ -1,29 +1,46 @@
-import { TrendingUp, Calendar, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, Calendar, ChevronLeft, ChevronRight, BarChart2 } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 
-export default async function ReportsPage() {
-  const data = await getDashboardData("current_month");
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
+  const params = await searchParams;
+  const now = new Date();
+  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const selectedMonth = params.month || defaultMonth;
+
+  const [yearStr, monthNumStr] = selectedMonth.split("-");
+  const year = parseInt(yearStr, 10) || now.getFullYear();
+  const monthIndex = (parseInt(monthNumStr, 10) || now.getMonth() + 1) - 1;
+
+  const start = `${year}-${String(monthIndex + 1).padStart(2, "0")}-01`;
+  const end = new Date(year, monthIndex + 1, 0).toISOString().slice(0, 10);
+
+  const prevMonthDate = new Date(year, monthIndex - 1, 1);
+  const nextMonthDate = new Date(year, monthIndex + 1, 1);
+  const prevMonthKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
+  const nextMonthKey = `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, "0")}`;
+
+  const monthDisplayName = new Date(year, monthIndex, 1).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const data = await getDashboardData("custom", { start, end });
 
   const savingsRate =
-    data.totalIncome > 0 ? Math.round((data.netCashFlow / data.totalIncome) * 100) : 0;
+    data.totalIncome > 0 ? Math.max(0, Math.round((data.netCashFlow / data.totalIncome) * 100)) : 0;
 
-  const monthlyHistory = [
-    { month: "Jan", income: 320, expense: 95 },
-    { month: "Feb", income: 320, expense: 110 },
-    { month: "Mar", income: 330, expense: 88 },
-    { month: "Apr", income: 340, expense: 102 },
-    { month: "May", income: 340, expense: 78 },
-    { month: "Jun", income: 350, expense: 92 },
-    { month: "Jul", income: 350, expense: 85 },
-    {
-      month: "Aug",
-      income: Math.round(data.totalIncome / 1000) || 350,
-      expense: Math.round(data.totalExpenses / 1000) || 84,
-    },
-  ];
-  const maxChartVal = Math.max(...monthlyHistory.map((m) => Math.max(m.income, m.expense)), 360);
+  const monthlyHistory = data.monthlyHistory || [];
+  const maxChartVal = Math.max(
+    ...monthlyHistory.map((m) => Math.max(m.income, m.expense)),
+    1000
+  );
 
   return (
     <div className="space-y-6 pb-12">
@@ -32,12 +49,32 @@ export default async function ReportsPage() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Financial Reports</h1>
           <p className="text-xs text-zinc-500">
-            In-depth summary analysis of your cash flow and allocation health.
+            In-depth summary analysis of your cash flow, savings rate, and category outflows.
           </p>
         </div>
-        <div className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600">
-          <Calendar className="h-3.5 w-3.5 text-zinc-400" />
-          <span>August 2026</span>
+
+        {/* Month Selector */}
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/reports?month=${prevMonthKey}`}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
+            title="Previous Month"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Link>
+
+          <span className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-800 shadow-xs">
+            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
+            <span>{monthDisplayName}</span>
+          </span>
+
+          <Link
+            href={`/reports?month=${nextMonthKey}`}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
+            title="Next Month"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Link>
         </div>
       </div>
 
@@ -47,12 +84,14 @@ export default async function ReportsPage() {
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Monthly Total Income
+              Total Inflows
             </span>
-            <span className="text-[10px] font-bold text-emerald-600">+12.4% vs July</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              Verified
+            </span>
           </div>
-          <p className="mt-3 text-2xl font-bold text-zinc-900 lg:text-3xl">
-            {formatNaira(data.totalIncome)}
+          <p className="mt-3 text-2xl font-bold text-emerald-600 lg:text-3xl">
+            +{formatNaira(data.totalIncome)}
           </p>
         </div>
 
@@ -60,52 +99,65 @@ export default async function ReportsPage() {
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Monthly Expenses
+              Total Outflows
             </span>
-            <span className="text-[10px] font-bold text-emerald-600">-4.2% vs July</span>
+            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700">
+              Expenses
+            </span>
           </div>
           <p className="mt-3 text-2xl font-bold text-zinc-900 lg:text-3xl">
-            {formatNaira(data.totalExpenses)}
+            -{formatNaira(data.totalExpenses)}
           </p>
         </div>
 
-        {/* Card 3: Net Savings Cash Flow */}
+        {/* Card 3: Net Cash Flow */}
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Net Savings Cash Flow
+              Net Surplus / Margin
             </span>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-              Healthy Reserve
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                data.netCashFlow >= 0
+                  ? "bg-brand-50 text-brand-700"
+                  : "bg-rose-50 text-rose-700"
+              }`}
+            >
+              {data.netCashFlow >= 0 ? "Surplus" : "Deficit"}
             </span>
           </div>
-          <p className="mt-3 text-2xl font-bold text-emerald-600 lg:text-3xl">
+          <p
+            className={`mt-3 text-2xl font-bold lg:text-3xl ${
+              data.netCashFlow >= 0 ? "text-brand-600" : "text-rose-600"
+            }`}
+          >
+            {data.netCashFlow >= 0 ? "+" : ""}
             {formatNaira(data.netCashFlow)}
           </p>
         </div>
 
-        {/* Card 4: Estimated Savings Rate */}
+        {/* Card 4: Savings Rate */}
         <div className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              Estimated Savings Rate
+              Savings Rate
             </span>
-            <span className="text-[10px] font-bold text-brand-600">Target: 50%+</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+              Ratio
+            </span>
           </div>
-          <p className="mt-3 text-2xl font-bold text-brand-600 lg:text-3xl">
-            {savingsRate > 0 ? `${savingsRate}%` : "75.8%"}
-          </p>
+          <p className="mt-3 text-2xl font-bold text-zinc-900 lg:text-3xl">{savingsRate}%</p>
         </div>
       </div>
 
-      {/* Grid Row 2: Cash Flow History Chart (60%) + Expense Breakdown Donut (40%) */}
+      {/* Main 2-Column Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Cash Flow History */}
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-8">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left Column: Cash Flow Trend Chart (7/12 cols) */}
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-7 space-y-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-sm font-bold text-zinc-900">Cash Flow History</h2>
-              <p className="text-xs text-zinc-400">Comparing monthly income and expenses</p>
+              <h2 className="text-sm font-bold text-zinc-900">Historical Cash Flow (6 Months)</h2>
+              <p className="text-xs text-zinc-400">Calculated directly from your logged transaction history.</p>
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1.5">
@@ -113,141 +165,62 @@ export default async function ReportsPage() {
                 <span className="text-zinc-600 font-medium">Income</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-xs bg-rose-500" />
+                <span className="h-2.5 w-2.5 rounded-xs bg-rose-400" />
                 <span className="text-zinc-600 font-medium">Expenses</span>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 flex h-48 items-end justify-between gap-2 pt-4">
+          <div className="mt-6 flex h-48 items-end justify-between gap-3 pt-4">
             {monthlyHistory.map((item, idx) => {
-              const incHeight = Math.max(12, Math.round((item.income / maxChartVal) * 100));
-              const expHeight = Math.max(8, Math.round((item.expense / maxChartVal) * 100));
+              const incHeight = maxChartVal > 0 ? Math.max(4, Math.round((item.income / maxChartVal) * 100)) : 4;
+              const expHeight = maxChartVal > 0 ? Math.max(4, Math.round((item.expense / maxChartVal) * 100)) : 4;
               return (
                 <div key={idx} className="flex flex-1 flex-col items-center gap-2">
                   <div className="flex h-36 w-full items-end justify-center gap-1">
                     <div
-                      className="w-3 rounded-t-xs bg-brand-500 sm:w-4"
+                      className="w-3 rounded-t-xs bg-brand-500 transition-all hover:opacity-80 sm:w-4"
                       style={{ height: `${incHeight}%` }}
+                      title={`Income: ${formatNaira(item.income)}`}
                     />
                     <div
-                      className="w-3 rounded-t-xs bg-rose-400 sm:w-4"
+                      className="w-3 rounded-t-xs bg-rose-400 transition-all hover:opacity-80 sm:w-4"
                       style={{ height: `${expHeight}%` }}
+                      title={`Expenses: ${formatNaira(item.expense)}`}
                     />
                   </div>
-                  <span className="text-[11px] font-medium text-zinc-400">{item.month}</span>
+                  <span className="text-[11px] font-medium text-zinc-400">{item.monthName}</span>
                 </div>
               );
             })}
           </div>
         </div>
 
-        {/* Expense Breakdown */}
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-4 flex flex-col justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-zinc-900">Expense Breakdown</h2>
-            <p className="text-xs text-zinc-400">Visualized distribution of expenses</p>
+        {/* Right Column: Category Spending Distribution (5/12 cols) */}
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-5 space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
+            <h2 className="text-sm font-bold text-zinc-900">Spending by Category</h2>
+            <span className="text-xs text-zinc-400 font-semibold">{monthDisplayName}</span>
           </div>
 
-          <div className="my-6 flex items-center justify-center">
-            <div className="relative flex h-36 w-36 items-center justify-center rounded-full border-8 border-brand-500 border-r-emerald-400 border-b-amber-400">
-              <div className="text-center">
-                <p className="text-xs font-bold text-zinc-900">
-                  ₦{Math.round(data.totalExpenses / 1000) || 84.6}k
-                </p>
-                <p className="text-[9px] uppercase tracking-wider text-zinc-400">Total</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-brand-500" /> Tithe & Giving
-              </span>
-              <span className="font-bold text-zinc-900">41.4%</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-emerald-400" /> Rent & Utilities
-              </span>
-              <span className="font-bold text-zinc-900">24.2%</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="flex items-center gap-1.5 text-zinc-600">
-                <span className="h-2 w-2 rounded-full bg-amber-400" /> Food & Dining
-              </span>
-              <span className="font-bold text-zinc-900">16.8%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid Row 3: Month-over-Month Growth (60%) + Top Spending Categories (40%) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Month-over-Month Growth Table */}
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-8">
-          <h2 className="text-sm font-bold text-zinc-900 mb-3">Month-over-Month Growth</h2>
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-zinc-100 bg-zinc-50/50 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                <th className="py-2.5 px-3">Metric</th>
-                <th className="py-2.5 px-3 text-right">July 2026</th>
-                <th className="py-2.5 px-3 text-right">August 2026</th>
-                <th className="py-2.5 px-3 text-right">Variance</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              <tr>
-                <td className="py-3 px-3 font-semibold text-zinc-900">Total Income Received</td>
-                <td className="py-3 px-3 text-right text-zinc-500">₦311,300</td>
-                <td className="py-3 px-3 text-right font-bold text-zinc-900">₦350,000</td>
-                <td className="py-3 px-3 text-right font-bold text-emerald-600">+12.4%</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-3 font-semibold text-zinc-900">Allocated Expenses</td>
-                <td className="py-3 px-3 text-right text-zinc-500">₦88,300</td>
-                <td className="py-3 px-3 text-right font-bold text-zinc-900">₦84,600</td>
-                <td className="py-3 px-3 text-right font-bold text-emerald-600">-4.2%</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-3 font-semibold text-zinc-900">Investment Contributions</td>
-                <td className="py-3 px-3 text-right text-zinc-500">₦20,000</td>
-                <td className="py-3 px-3 text-right font-bold text-zinc-900">₦25,000</td>
-                <td className="py-3 px-3 text-right font-bold text-emerald-600">+25.0%</td>
-              </tr>
-              <tr>
-                <td className="py-3 px-3 font-semibold text-zinc-900">Net Positive Reserve</td>
-                <td className="py-3 px-3 text-right text-zinc-500">₦203,000</td>
-                <td className="py-3 px-3 text-right font-bold text-zinc-900">₦240,400</td>
-                <td className="py-3 px-3 text-right font-bold text-emerald-600">+18.4%</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Top Spending Categories */}
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-4 space-y-3.5">
-          <h2 className="text-sm font-bold text-zinc-900 border-b border-zinc-100 pb-2">
-            Top Spending Categories
-          </h2>
-
-          <div className="space-y-3">
-            {[
-              { name: "Tithe & Giving", amount: "₦35,000", pct: 100 },
-              { name: "Rent & Utilities", amount: "₦20,500", pct: 60 },
-              { name: "Food & Dining", amount: "₦14,200", pct: 40 },
-              { name: "Transport (Uber/Bolt)", amount: "₦4,300", pct: 15 },
-              { name: "Entertainment (Netflix/Spotify)", amount: "₦7,000", pct: 20 },
-            ].map((cat) => (
-              <div key={cat.name} className="space-y-1">
-                <div className="flex justify-between text-xs">
-                  <span className="font-semibold text-zinc-700">{cat.name}</span>
-                  <span className="font-bold text-zinc-900">{cat.amount}</span>
+          <div className="space-y-3.5">
+            {data.budgetHealth.length === 0 ? (
+              <p className="text-xs text-zinc-400 py-4 text-center">No category expense records found.</p>
+            ) : (
+              data.budgetHealth.map((cat) => (
+                <div key={cat.bucketId} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-semibold text-zinc-900">{cat.bucketName}</span>
+                    <span className="text-zinc-500 font-bold">{formatNaira(cat.spent)}</span>
+                  </div>
+                  <ProgressBar
+                    percent={cat.percentUsed}
+                    tone={cat.warning ? "danger" : "brand"}
+                    className="h-1.5"
+                  />
                 </div>
-                <ProgressBar percent={cat.pct} tone="brand" className="h-1.5" />
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

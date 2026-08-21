@@ -3,6 +3,7 @@ import { User, Sliders, Bell, CreditCard, ShieldAlert, Heart, Download } from "l
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./profile-form";
 import { BucketManager } from "./bucket-manager";
+import { LinkedAccountsManager } from "./linked-accounts";
 import { PushSubscribeButton } from "../notifications/push-subscribe-button";
 
 export default async function SettingsPage({
@@ -21,8 +22,15 @@ export default async function SettingsPage({
   const [{ data: profile }, { data: buckets }, { data: accounts }] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle(),
     supabase.from("budget_buckets").select("*").eq("user_id", user?.id).order("sort_order"),
-    supabase.from("accounts").select("id, name, type, balance").eq("user_id", user?.id).order("name"),
+    supabase.from("accounts").select("id, name, institution, is_active").eq("user_id", user?.id).order("name"),
   ]);
+
+  const resolvedProfile = {
+    ...profile,
+    avatar_url: profile?.avatar_url || (user?.user_metadata as any)?.avatar_url || null,
+  };
+
+  const accountList = accounts ?? [];
 
   return (
     <div className="space-y-6 pb-12">
@@ -30,7 +38,7 @@ export default async function SettingsPage({
       <div>
         <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">System Settings</h1>
         <p className="text-xs text-zinc-500">
-          Manage your personal profile, financial buckets, and security settings.
+          Manage your personal profile, financial buckets, linked accounts, and security settings.
         </p>
       </div>
 
@@ -41,7 +49,7 @@ export default async function SettingsPage({
           <nav className="space-y-1 rounded-xl border border-zinc-200/80 bg-white p-2 shadow-sm">
             {[
               { id: "profile", label: "Profile", icon: User },
-              { id: "accounts", label: "Accounts", icon: CreditCard },
+              { id: "accounts", label: "Linked Accounts", icon: CreditCard },
               { id: "allocations", label: "Allocation Percentages", icon: Sliders },
               { id: "notifications", label: "Notifications", icon: Bell },
               { id: "security", label: "Security & Deletion", icon: ShieldAlert, danger: true },
@@ -73,49 +81,21 @@ export default async function SettingsPage({
           {/* TAB 1: Profile (Canonical Home for Personal Profile ONLY) */}
           {currentTab === "profile" && (
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm">
-              <ProfileForm profile={profile} userEmail={user?.email || ""} />
+              <ProfileForm profile={resolvedProfile} userEmail={user?.email || ""} />
             </div>
           )}
 
           {/* TAB 2: Accounts (Canonical Home for Linked Accounts) */}
           {currentTab === "accounts" && (
-            <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-5">
-              <div className="border-b border-zinc-100 pb-4">
-                <h2 className="text-sm font-bold text-zinc-900">Linked Accounts</h2>
-                <p className="text-xs text-zinc-400">
-                  Manage bank accounts and funding sources tied to your StewardOS allocations.
-                </p>
-              </div>
-
-              <div className="divide-y divide-zinc-100">
-                {(accounts ?? []).length === 0 ? (
-                  <p className="py-4 text-xs text-zinc-400">No bank accounts linked yet.</p>
-                ) : (
-                  (accounts ?? []).map((acc) => (
-                    <div key={acc.id} className="flex items-center justify-between py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
-                          <CreditCard className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-zinc-900">{acc.name}</p>
-                          <p className="text-[10px] text-zinc-400 capitalize">{acc.type || "Checking"}</p>
-                        </div>
-                      </div>
-                      <span className="text-xs font-bold text-zinc-900">
-                        ₦{Number(acc.balance || 0).toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
+            <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm">
+              <LinkedAccountsManager accounts={accountList} />
             </div>
           )}
 
           {/* TAB 3: Allocation Percentages (Canonical Home for Buckets Editor) */}
           {currentTab === "allocations" && (
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm">
-              <BucketManager buckets={buckets ?? []} accounts={accounts ?? []} />
+              <BucketManager buckets={buckets ?? []} accounts={accountList} />
             </div>
           )}
 
