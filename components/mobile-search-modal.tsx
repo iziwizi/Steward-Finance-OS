@@ -13,6 +13,8 @@ import {
   Landmark,
   Compass,
   X,
+  Heart,
+  PieChart,
 } from "lucide-react";
 import { searchWorkspace, type SearchResultItem } from "@/lib/actions/search";
 
@@ -68,12 +70,19 @@ export function MobileSearchModal() {
         return RefreshCw;
       case "asset":
         return Landmark;
+      case "wishlist":
+        return Heart;
+      case "allocation":
+        return PieChart;
       case "journal":
         return BookOpen;
       default:
         return Search;
     }
   };
+
+  const navResults = results.filter((r) => r.category === "navigation");
+  const dataResults = results.filter((r) => r.category !== "navigation");
 
   return (
     <>
@@ -159,36 +168,75 @@ export function MobileSearchModal() {
               </div>
             ) : query && results.length === 0 ? (
               <div className="py-12 text-center text-xs text-zinc-400">
-                No matching records found for "{query}"
+                No matching records found for &quot;{query}&quot;
               </div>
             ) : (
-              <div className="space-y-1">
-                {results.map((item) => {
-                  const Icon = getCategoryIcon(item.category);
-                  return (
-                    <Link
-                      key={item.id}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-zinc-50 border border-transparent hover:border-zinc-100"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-xs font-bold text-zinc-900">{item.title}</p>
-                          <p className="truncate text-[11px] text-zinc-400">{item.subtitle}</p>
-                        </div>
-                      </div>
-                      {item.amount !== undefined && (
-                        <span className="shrink-0 text-xs font-bold text-zinc-900">
-                          ₦{item.amount.toLocaleString()}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
+              <div className="space-y-3">
+                {navResults.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+                      Pages ({navResults.length})
+                    </p>
+                    {navResults.map((item) => {
+                      const Icon = getCategoryIcon(item.category);
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-zinc-50 border border-zinc-100"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-bold text-zinc-900">{item.title}</p>
+                              <p className="truncate text-[11px] text-zinc-400">{item.subtitle}</p>
+                            </div>
+                          </div>
+                          <span className="shrink-0 rounded-xs bg-zinc-100 px-1.5 py-0.5 text-[9px] font-bold uppercase text-zinc-500">
+                            Page
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {dataResults.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-t border-zinc-100 pt-2">
+                      Data Records ({dataResults.length})
+                    </p>
+                    {dataResults.map((item) => {
+                      const Icon = getCategoryIcon(item.category);
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.href}
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-zinc-50 border border-zinc-100"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-600">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-bold text-zinc-900">{item.title}</p>
+                              <p className="truncate text-[11px] text-zinc-400">{item.subtitle}</p>
+                            </div>
+                          </div>
+                          {item.amount !== undefined && (
+                            <span className="shrink-0 text-xs font-bold text-zinc-900">
+                              ₦{item.amount.toLocaleString()}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>

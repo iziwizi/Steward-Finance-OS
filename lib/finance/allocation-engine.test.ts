@@ -7,6 +7,8 @@ import {
   calculateBudgetHealth,
   calculateGoalProgress,
   calculateAllocationProgress,
+  evaluateAllocationObligation,
+  evaluateAllocationObligations,
   formatCompactNaira,
   resolvePeriod,
   type Bucket,
@@ -156,3 +158,119 @@ describe("resolvePeriod", () => {
     expect(end).toBe("2026-08-31");
   });
 });
+
+describe("Allocation Accounting — Per-Income Obligation Regression Suite (TEST 1 - 4)", () => {
+  const titheBucket: Bucket = { id: "b-tithe", name: "Tithe", targetPercent: 10, isIncomeSplit: true };
+
+  it("TEST 1: Income ₦3,000, Tithe 10%, Mark ₦300 sent -> Expected remaining = ₦0", () => {
+    const [planned] = calculateIncomeAllocations(3000, [titheBucket]);
+    expect(planned.plannedAmount).toBe(300);
+
+    const obligation1 = evaluateAllocationObligation({
+      id: "alloc-1",
+      incomeTransactionId: "inc-1",
+      bucketId: planned.bucketId,
+      bucketName: planned.bucketName,
+      plannedAmount: planned.plannedAmount,
+      status: "sent",
+    });
+
+    expect(obligation1.plannedAmount).toBe(300);
+    expect(obligation1.sentAmount).toBe(300);
+    expect(obligation1.remainingAmount).toBe(0);
+    expect(obligation1.fundingProgress).toBe(100);
+    expect(obligation1.isSettled).toBe(true);
+  });
+
+  it("TEST 2: Income ₦18,000, Tithe 10% -> Planned ₦1,800, Sent ₦0, Remaining ₦1,800, Funding Progress 0%", () => {
+    const [planned] = calculateIncomeAllocations(18000, [titheBucket]);
+    expect(planned.plannedAmount).toBe(1800);
+
+    const obligation2 = evaluateAllocationObligation({
+      id: "alloc-2",
+      incomeTransactionId: "inc-2",
+      bucketId: planned.bucketId,
+      bucketName: planned.bucketName,
+      plannedAmount: planned.plannedAmount,
+      status: "pending",
+    });
+
+    expect(obligation2.plannedAmount).toBe(1800);
+    expect(obligation2.sentAmount).toBe(0);
+    expect(obligation2.remainingAmount).toBe(1800);
+    expect(obligation2.fundingProgress).toBe(0);
+    expect(obligation2.isSettled).toBe(false);
+  });
+
+  it("TEST 3: Mark the ₦1,800 allocation as sent -> Expected sent = ₦1,800, Remaining = ₦0, Funding Progress = 100%", () => {
+    const [planned] = calculateIncomeAllocations(18000, [titheBucket]);
+    const obligation2Sent = evaluateAllocationObligation({
+      id: "alloc-2",
+      incomeTransactionId: "inc-2",
+      bucketId: planned.bucketId,
+      bucketName: planned.bucketName,
+      plannedAmount: planned.plannedAmount,
+      status: "sent",
+    });
+
+    expect(obligation2Sent.plannedAmount).toBe(1800);
+    expect(obligation2Sent.sentAmount).toBe(1800);
+    expect(obligation2Sent.remainingAmount).toBe(0);
+    expect(obligation2Sent.fundingProgress).toBe(100);
+    expect(obligation2Sent.isSettled).toBe(true);
+  });
+
+  it("TEST 4: Verify previous ₦300 does not affect new ₦1,800 obligation, and aggregation is correct", () => {
+    // Income 1: ₦3,000 -> ₦300 Tithe (Sent)
+    const alloc1 = {
+      id: "alloc-1",
+      incomeTransactionId: "inc-1",
+      bucketId: "b-tithe",
+      bucketName: "Tithe",
+      plannedAmount: 300,
+      status: "sent" as const,
+    };
+
+    // Income 2: ₦18,000 -> ₦1,800 Tithe (Pending)
+    const alloc2 = {
+      id: "alloc-2",
+      incomeTransactionId: "inc-2",
+      bucketId: "b-tithe",
+      bucketName: "Tithe",
+      plannedAmount: 1800,
+      status: "pending" as const,
+    };
+
+    // Evaluate individual obligations
+    const eval1 = evaluateAllocationObligation(alloc1);
+    const eval2 = evaluateAllocationObligation(alloc2);
+
+    // Obligation 1 is completely settled
+    expect(eval1.remainingAmount).toBe(0);
+    expect(eval1.isSettled).toBe(true);
+
+    // Obligation 2 remains ₦1,800 outstanding (the old ₦300 sent NEVER reduces obligation 2)
+    expect(eval2.remainingAmount).toBe(1800);
+    expect(eval2.sentAmount).toBe(0);
+    expect(eval2.fundingProgress).toBe(0);
+    expect(eval2.isSettled).toBe(false);
+
+    // Aggregate accounting across both transactions in period
+    const agg = evaluateAllocationObligations([alloc1, alloc2]);
+    expect(agg.totalPlanned).toBe(2100);
+    expect(agg.totalSent).toBe(300);
+    expect(agg.totalRemaining).toBe(1800);
+    expect(agg.fundingProgress).toBe(14); // 300 / 2100 = 14% aggregate
+    expect(agg.isFullySettled).toBe(false);
+
+    // Now mark alloc2 as sent
+    const alloc2Sent = { ...alloc2, status: "sent" as const };
+    const aggSettled = evaluateAllocationObligations([alloc1, alloc2Sent]);
+    expect(aggSettled.totalPlanned).toBe(2100);
+    expect(aggSettled.totalSent).toBe(2100);
+    expect(aggSettled.totalRemaining).toBe(0);
+    expect(aggSettled.fundingProgress).toBe(100);
+    expect(aggSettled.isFullySettled).toBe(true);
+  });
+});
+

@@ -25,8 +25,9 @@ function getTransport() {
 
 export async function sendDigestEmail(to: string, subject: string, html: string, text: string) {
   const transport = getTransport();
+  const fromName = process.env.EMAIL_FROM_NAME || process.env.FROM_NAME || "StewardOS";
   await transport.sendMail({
-    from: `StewardOS <${process.env.GMAIL_USER}>`,
+    from: `${fromName} <${process.env.GMAIL_USER}>`,
     to,
     subject,
     html,

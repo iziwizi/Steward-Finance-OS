@@ -191,30 +191,34 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Mobile Header */}
-        <header className="mx-auto flex max-w-lg items-center justify-between px-4 pt-4 md:hidden">
-          <Logo size="sm" />
-          <div className="flex items-center gap-2.5">
-            <MobileSearchModal />
-            <Link href="/notifications" className="tap-target relative flex items-center justify-center p-1">
-              <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
-              {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-expense text-[10px] font-medium text-white">
-                  {unreadCount > 9 ? "9+" : unreadCount}
-                </span>
-              )}
+        {/* Sticky Mobile Header */}
+        <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/95 backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2.5">
+            <Link href="/dashboard" className="shrink-0">
+              <Logo variant="full" />
             </Link>
-            <Link
-              href="/settings?tab=profile"
-              aria-label="Profile Settings"
-              className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-[11px] font-bold text-white shadow-xs ml-0.5"
-            >
-              {avatarUrl ? (
-                <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
-              ) : (
-                <span>{userInitials}</span>
-              )}
-            </Link>
+            <div className="flex items-center gap-2">
+              <MobileSearchModal />
+              <Link href="/notifications" className="tap-target relative flex items-center justify-center p-1">
+                <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-expense px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+              <Link
+                href="/settings?tab=profile"
+                aria-label="Profile Settings"
+                className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-[11px] font-bold text-white shadow-xs ml-0.5 shrink-0"
+              >
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
+                ) : (
+                  <span>{userInitials}</span>
+                )}
+              </Link>
+            </div>
           </div>
         </header>
 

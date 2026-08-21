@@ -47,6 +47,9 @@ export function calculateIncomeAllocations(
   if (splitBuckets.length === 0) return [];
 
   const totalKobo = toKobo(incomeAmount);
+  const totalTargetPercent = splitBuckets.reduce((s, b) => s + b.targetPercent, 0);
+  const totalTargetKobo = Math.round((totalKobo * totalTargetPercent) / 100);
+
   const rawShares = splitBuckets.map((b) => ({
     bucket: b,
     exact: (totalKobo * b.targetPercent) / 100,
@@ -59,7 +62,7 @@ export function calculateIncomeAllocations(
   }));
 
   let allocatedKobo = floored.reduce((sum, f) => sum + f.kobo, 0);
-  let leftoverKobo = totalKobo - allocatedKobo;
+  let leftoverKobo = totalTargetKobo - allocatedKobo;
 
   // Distribute leftover kobo (rounding dust) to the buckets with the
   // largest fractional remainder first — standard largest-remainder method.
@@ -82,14 +85,80 @@ export type AllocationSummary = {
   totalPending: number;
 };
 
+export type EvaluatedObligation = {
+  id?: string;
+  incomeTransactionId?: string;
+  bucketId: string;
+  bucketName: string;
+  plannedAmount: number;
+  status: AllocationStatus;
+  sentAmount: number;
+  remainingAmount: number;
+  fundingProgress: number; // 0 or 100 for single obligation
+  isSettled: boolean;
+};
+
+export type ObligationAggregation = {
+  obligations: EvaluatedObligation[];
+  totalPlanned: number;
+  totalSent: number;
+  totalRemaining: number;
+  fundingProgress: number; // 0-100%
+  isFullySettled: boolean;
+};
+
+export function evaluateAllocationObligation(
+  record: AllocationRecord & { id?: string; incomeTransactionId?: string }
+): EvaluatedObligation {
+  const planned = Number(record.plannedAmount) || 0;
+  const isSent = record.status === "sent";
+  const sentAmount = isSent ? planned : 0;
+  const remainingAmount = isSent ? 0 : planned;
+  const fundingProgress = isSent ? 100 : 0;
+
+  return {
+    id: record.id,
+    incomeTransactionId: record.incomeTransactionId,
+    bucketId: record.bucketId,
+    bucketName: record.bucketName,
+    plannedAmount: planned,
+    status: record.status,
+    sentAmount,
+    remainingAmount,
+    fundingProgress,
+    isSettled: isSent,
+  };
+}
+
+export function evaluateAllocationObligations(
+  records: Array<AllocationRecord & { id?: string; incomeTransactionId?: string }>
+): ObligationAggregation {
+  const evaluated = records.map(evaluateAllocationObligation);
+  const totalPlanned = toNaira(evaluated.reduce((s, o) => s + toKobo(o.plannedAmount), 0));
+  const totalSent = toNaira(evaluated.reduce((s, o) => s + toKobo(o.sentAmount), 0));
+  const totalRemaining = toNaira(evaluated.reduce((s, o) => s + toKobo(o.remainingAmount), 0));
+  const fundingProgress =
+    totalPlanned > 0 ? Math.min(100, Math.round((totalSent / totalPlanned) * 100)) : 0;
+  const isFullySettled = totalRemaining === 0 && totalPlanned > 0;
+
+  return {
+    obligations: evaluated,
+    totalPlanned,
+    totalSent,
+    totalRemaining,
+    fundingProgress,
+    isFullySettled,
+  };
+}
+
 /** Never report pending money as sent — this is the whole point of the feature. */
 export function summarizeAllocations(records: AllocationRecord[]): AllocationSummary {
-  const totalPlanned = records.reduce((s, r) => s + r.plannedAmount, 0);
-  const totalSent = records
-    .filter((r) => r.status === "sent")
-    .reduce((s, r) => s + r.plannedAmount, 0);
-  const totalPending = totalPlanned - totalSent;
-  return { totalPlanned, totalSent, totalPending };
+  const agg = evaluateAllocationObligations(records);
+  return {
+    totalPlanned: agg.totalPlanned,
+    totalSent: agg.totalSent,
+    totalPending: agg.totalRemaining,
+  };
 }
 
 export type CashFlowInput = {

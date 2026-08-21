@@ -7,7 +7,7 @@ export interface SearchResultItem {
   title: string;
   subtitle: string;
   href: string;
-  category: "navigation" | "transaction" | "goal" | "bill" | "subscription" | "asset" | "journal";
+  category: "navigation" | "transaction" | "goal" | "bill" | "subscription" | "asset" | "wishlist" | "allocation" | "journal";
   amount?: number;
 }
 
@@ -137,6 +137,8 @@ export async function searchWorkspace(query: string): Promise<SearchResultItem[]
     { data: bills },
     { data: subscriptions },
     { data: assets },
+    { data: wishlist },
+    { data: allocations },
     { data: journal },
   ] = await Promise.all([
     supabase
@@ -174,6 +176,18 @@ export async function searchWorkspace(query: string): Promise<SearchResultItem[]
       .select("id, name, estimated_value, category")
       .eq("user_id", user.id)
       .ilike("name", cleanQ)
+      .limit(4),
+    supabase
+      .from("wishlist_items")
+      .select("id, item_name, estimated_cost, category")
+      .eq("user_id", user.id)
+      .ilike("item_name", cleanQ)
+      .limit(4),
+    supabase
+      .from("allocations")
+      .select("id, planned_amount, status, budget_buckets!inner(name)")
+      .eq("user_id", user.id)
+      .ilike("budget_buckets.name", cleanQ)
       .limit(4),
     supabase
       .from("financial_journal_entries")
@@ -245,6 +259,28 @@ export async function searchWorkspace(query: string): Promise<SearchResultItem[]
       href: "/assets",
       category: "asset",
       amount: Number(a.estimated_value),
+    });
+  });
+
+  (wishlist ?? []).forEach((w) => {
+    results.push({
+      id: `wish-${w.id}`,
+      title: w.item_name,
+      subtitle: `Wishlist · ${w.category || "Planned Purchase"}`,
+      href: "/wishlist",
+      category: "wishlist",
+      amount: Number(w.estimated_cost),
+    });
+  });
+
+  (allocations ?? []).forEach((al: any) => {
+    results.push({
+      id: `alloc-${al.id}`,
+      title: `${al.budget_buckets?.name ?? "Envelope"} Allocation`,
+      subtitle: `Allocation · ${al.status === "sent" ? "Sent" : "Pending"}`,
+      href: "/allocations",
+      category: "allocation",
+      amount: Number(al.planned_amount),
     });
   });
 

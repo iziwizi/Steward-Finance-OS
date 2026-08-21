@@ -102,6 +102,7 @@ export async function setAllocationStatus(allocationId: string, status: "pending
 
   revalidatePath("/dashboard");
   revalidatePath("/transactions");
+  revalidatePath("/allocations");
   revalidatePath("/celebrations");
   return { success: true };
 }

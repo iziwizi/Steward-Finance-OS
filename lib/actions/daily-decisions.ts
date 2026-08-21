@@ -134,6 +134,7 @@ export async function quickRecordIncome(data: {
 
     revalidatePath("/dashboard");
     revalidatePath("/transactions");
+    revalidatePath("/allocations");
     revalidatePath("/reports");
     return { success: true, id: income.id };
   } catch (err: any) {

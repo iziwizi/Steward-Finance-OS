@@ -169,19 +169,25 @@ export default async function DashboardPage() {
       />
 
       {/* Authoritative Dynamic Celebration / Encouragement Card (Yellow Card below Today's Decisions) */}
-      <div className="flex w-full items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-left shadow-xs transition-all">
-        <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold text-zinc-900 text-xs sm:text-sm">{encouragement.title}</p>
-          <p className="text-xs text-zinc-600 mt-0.5 leading-relaxed">{encouragement.message}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-xl border border-amber-200 bg-amber-50/90 p-4 text-left shadow-xs transition-all">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100/90 text-amber-700 mt-0.5">
+            <Sparkles className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 space-y-0.5">
+            <p className="font-bold text-zinc-900 text-xs sm:text-sm">{encouragement.title}</p>
+            <p className="text-xs text-zinc-600 leading-relaxed">{encouragement.message}</p>
+          </div>
         </div>
-        <Link
-          href="/allocations"
-          className="text-xs font-semibold text-amber-800 hover:text-amber-900 hover:underline shrink-0 pt-0.5 inline-flex items-center gap-1"
-        >
-          <span>Allocations</span>
-          <span>→</span>
-        </Link>
+        <div className="pl-11 sm:pl-0 sm:shrink-0 pt-1 sm:pt-0">
+          <Link
+            href="/allocations"
+            className="inline-flex items-center gap-1 text-xs font-bold text-amber-900 hover:text-amber-950 hover:underline"
+          >
+            <span>Allocations</span>
+            <span aria-hidden="true">→</span>
+          </Link>
+        </div>
       </div>
 
       {/* 4 Metrics Cards Row — Matching Figma desktop-dashboard */}

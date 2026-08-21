@@ -1,13 +1,35 @@
 import Link from "next/link";
-import { Sliders, Plus, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Sliders, Plus, CheckCircle2, Clock, AlertCircle, ArrowDownLeft, Sparkles, Check } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Badge } from "@/components/ui/badge";
 import { TargetPercentEditor } from "@/components/target-percent-editor";
+import { AllocationToggle } from "@/app/(app)/transactions/allocation-toggle";
+import { createClient } from "@/lib/supabase/server";
 
-export default async function AllocationsPage() {
-  const data = await getDashboardData("current_month");
+export default async function AllocationsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ income_id?: string }>;
+}) {
+  const params = searchParams ? await searchParams : undefined;
+  const targetIncomeId = params?.income_id;
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [data, { data: incomeWithAllocations }] = await Promise.all([
+    getDashboardData("current_month"),
+    supabase
+      .from("income_transactions")
+      .select("id, txn_date, source, amount, description, allocations(id, bucket_id, planned_amount, status, sent_at, budget_buckets(name))")
+      .eq("user_id", user?.id)
+      .order("txn_date", { ascending: false })
+      .limit(20),
+  ]);
 
   const totalPlanned = data.allocationSummary.totalPlanned;
   const totalSent = data.allocationSummary.totalSent;
@@ -24,16 +46,25 @@ export default async function AllocationsPage() {
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Allocation Center</h1>
           <p className="text-xs text-zinc-500">
-            Manage your envelope distribution rules and track funding health.
+            Manage your envelope distribution rules, verify income obligations, and mark transfers sent.
           </p>
         </div>
-        <Link
-          href="/settings?tab=allocations"
-          className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
-        >
-          <Sliders className="h-3.5 w-3.5" />
-          Adjust Rules
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/settings?tab=allocations"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs transition-all hover:bg-zinc-50"
+          >
+            <Sliders className="h-3.5 w-3.5" />
+            Adjust Rules
+          </Link>
+          <Link
+            href="/income/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Record Income
+          </Link>
+        </div>
       </div>
 
       {/* 4 Top Metric Cards matching Figma desktop-allocations-center */}
@@ -112,7 +143,10 @@ export default async function AllocationsPage() {
       {/* Main Allocation Buckets Table matching Figma desktop-allocations-center */}
       <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between border-b border-zinc-100 pb-3.5">
-          <h2 className="text-sm font-bold text-zinc-900">Allocation Buckets</h2>
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900">Allocation Buckets Summary</h2>
+            <p className="text-[11px] text-zinc-400">Monthly aggregate distribution progress across your active rules</p>
+          </div>
           <span className="text-xs font-semibold text-zinc-400">
             {data.budgetHealth.length} Active Buckets
           </span>
@@ -190,6 +224,115 @@ export default async function AllocationsPage() {
           </table>
         </div>
       </div>
+
+      {/* Individual Income Allocations & Obligations Section (Live Toggle with Transactions) */}
+      <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-100 pb-3.5">
+          <div>
+            <h2 className="text-sm font-bold text-zinc-900">Recent Income Allocation Obligations</h2>
+            <p className="text-[11px] text-zinc-500">
+              Review and mark individual allocation transfers as <strong>Sent</strong> when physical funds are moved. Updates sync live with the Transactions ledger.
+            </p>
+          </div>
+          <Link
+            href="/transactions"
+            className="text-xs font-semibold text-brand-600 hover:text-brand-700 shrink-0"
+          >
+            View Full Ledger →
+          </Link>
+        </div>
+
+        {(!incomeWithAllocations || incomeWithAllocations.length === 0) ? (
+          <div className="py-8 text-center text-xs text-zinc-400">
+            No income transactions recorded yet. Record income to generate automatic allocation obligations.
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {incomeWithAllocations.map((inc: any) => {
+              const allocationsList = (inc.allocations ?? []).map((a: any) => ({
+                id: a.id,
+                bucketName: a.budget_buckets?.name ?? "General",
+                plannedAmount: Number(a.planned_amount),
+                status: a.status as "pending" | "sent",
+              }));
+
+              const totalPlannedForInc = allocationsList.reduce((s: number, a: any) => s + a.plannedAmount, 0);
+              const totalSentForInc = allocationsList
+                .filter((a: any) => a.status === "sent")
+                .reduce((s: number, a: any) => s + a.plannedAmount, 0);
+              const isFullySettled = allocationsList.length > 0 && totalSentForInc >= totalPlannedForInc;
+              const isTargetHighlight = targetIncomeId === inc.id;
+
+              return (
+                <div
+                  key={inc.id}
+                  id={`income-${inc.id}`}
+                  className={`rounded-xl border p-4 transition-all ${
+                    isTargetHighlight
+                      ? "border-brand-500 bg-brand-50/30 ring-2 ring-brand-200"
+                      : "border-zinc-200/80 bg-zinc-50/40"
+                  }`}
+                >
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/60 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 shrink-0">
+                        <ArrowDownLeft className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-bold text-zinc-900">{inc.source || inc.description || "Income Deposit"}</p>
+                          <span className="text-[11px] font-bold text-emerald-600">
+                            +{formatNaira(Number(inc.amount))}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-400">
+                          {new Date(inc.txn_date).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}
+                          {inc.description && ` · ${inc.description}`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
+                          isFullySettled
+                            ? "bg-emerald-100 text-emerald-800"
+                            : "bg-amber-100 text-amber-800"
+                        }`}
+                      >
+                        {isFullySettled ? <Check className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        {isFullySettled ? "Settled" : "Pending Action"}
+                      </span>
+                      <span className="text-[11px] font-medium text-zinc-500">
+                        {formatNaira(totalSentForInc)} / {formatNaira(totalPlannedForInc)} Sent
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Envelope Breakdown Rows */}
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                    {allocationsList.map((a: any) => (
+                      <div
+                        key={a.id}
+                        className="flex items-center justify-between rounded-lg border border-zinc-200/70 bg-white p-2.5 text-xs shadow-2xs"
+                      >
+                        <div>
+                          <p className="font-semibold text-zinc-900 text-xs">{a.bucketName}</p>
+                          <p className="text-[11px] font-bold text-brand-600">
+                            {formatNaira(a.plannedAmount)}
+                          </p>
+                        </div>
+                        <AllocationToggle id={a.id} status={a.status} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+

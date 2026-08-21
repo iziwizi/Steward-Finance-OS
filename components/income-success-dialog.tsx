@@ -6,16 +6,20 @@ import { formatNaira } from "@/lib/finance/allocation-engine";
 
 export function IncomeSuccessDialog({
   amount,
+  incomeId,
   isOpen,
   onClose,
   onRecordExpense,
 }: {
   amount: number;
+  incomeId?: string;
   isOpen: boolean;
   onClose: () => void;
   onRecordExpense?: () => void;
 }) {
   if (!isOpen) return null;
+
+  const targetHref = incomeId ? `/allocations?income_id=${incomeId}` : "/allocations";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-fast">
@@ -33,17 +37,17 @@ export function IncomeSuccessDialog({
 
         <div className="rounded-xl border border-emerald-100 bg-emerald-50/50 p-3.5 text-left">
           <p className="text-[11px] text-emerald-800 leading-relaxed">
-            💡 <strong>Next Step:</strong> You can mark allocations as <strong>Sent</strong> from the Allocations page after you physically transfer the funds to your dedicated accounts or envelopes.
+            💡 <strong>Next Step:</strong> You can review and mark allocations as <strong>Sent</strong> from the Allocations page after you physically transfer the funds to your dedicated accounts or envelopes.
           </p>
         </div>
 
         <div className="space-y-2 pt-2">
           <Link
-            href="/allocations"
+            href={targetHref}
             onClick={onClose}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-xs font-bold text-white shadow-sm hover:bg-brand-600 active:scale-95 transition-all"
           >
-            <span>Review Allocations</span>
+            <span>Review & Update Allocations</span>
             <ArrowRight className="h-4 w-4" />
           </Link>
 
