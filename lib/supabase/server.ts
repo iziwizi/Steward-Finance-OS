@@ -22,7 +22,14 @@ export async function createClient() {
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                path: "/",
+                sameSite: "lax",
+                httpOnly: true,
+                secure: process.env.NODE_ENV === "production",
+                maxAge: options?.maxAge ?? 60 * 60 * 24 * 30, // 30 days persistent session
+              })
             );
           } catch {
             // Called from a Server Component with no write access — the

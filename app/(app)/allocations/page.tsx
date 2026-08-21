@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { TargetPercentEditor } from "@/components/target-percent-editor";
 import { AllocationToggle } from "@/app/(app)/transactions/allocation-toggle";
 import { AllocationDateFilter } from "@/components/allocation-date-filter";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AllocationsPage({
@@ -60,8 +61,23 @@ export default async function AllocationsPage({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader
+        title="Allocation Center"
+        fallbackHref="/dashboard"
+        action={
+          <Link
+            href="/income/new"
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
+          >
+            <Plus className="h-3 w-3" />
+            <span>Income</span>
+          </Link>
+        }
+      />
+
       {/* Header matching Figma desktop-allocations-center */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Allocation Center</h1>
           <p className="text-xs text-zinc-500">

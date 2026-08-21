@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createGoal } from "@/lib/actions/goals";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function NewGoalPage() {
   const supabase = await createClient();
@@ -14,7 +15,10 @@ export default async function NewGoalPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">New Goal</h1>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="New Goal" fallbackHref="/goals" />
+
+      <h1 className="hidden md:block text-2xl font-semibold">New Goal</h1>
       <form action={createGoal} className="space-y-4">
         <Field label="Goal name">
           <input

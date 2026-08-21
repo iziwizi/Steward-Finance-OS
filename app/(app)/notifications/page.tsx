@@ -2,6 +2,7 @@ import { Bell, CheckCheck, Shield, AlertTriangle, RefreshCw, FileText, CheckCirc
 import { createClient } from "@/lib/supabase/server";
 import { markNotificationRead, markAllNotificationsRead } from "@/lib/actions/notifications";
 import { Button } from "@/components/ui/button";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function NotificationsPage() {
   const supabase = await createClient();
@@ -38,8 +39,11 @@ export default async function NotificationsPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Notifications" fallbackHref="/dashboard" />
+
+      {/* Desktop Header */}
+      <div className="hidden md:block">
         <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Notifications</h1>
         <p className="text-xs text-zinc-500">
           Stay updated with system warnings, upcoming bills, and pattern triggers.

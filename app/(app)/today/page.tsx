@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { CheckCircle2, AlertTriangle, Calendar } from "lucide-react";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function TodayPage() {
   const supabase = await createClient();
@@ -37,7 +38,10 @@ export default async function TodayPage() {
 
   return (
     <div className="space-y-6 pb-6">
-      <div>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Today's Decisions" fallbackHref="/dashboard" />
+
+      <div className="hidden md:block">
         <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">Daily Focus</p>
         <h1 className="text-display-md text-zinc-900">Today's Decisions</h1>
       </div>

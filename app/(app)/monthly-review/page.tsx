@@ -4,6 +4,7 @@ import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { MonthDatePicker } from "@/components/month-date-picker";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function MonthlyReviewPage({
   searchParams,
@@ -38,9 +39,12 @@ export default async function MonthlyReviewPage({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Monthly Review" fallbackHref="/dashboard" />
+
       {/* Header with Month Navigation Controls */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">{monthDisplayName} Review</h1>
           <p className="text-xs text-zinc-500">
             Automated monthly financial review, cash flow health, and envelope disbursement summary.

@@ -6,6 +6,7 @@ import { BucketManager } from "./bucket-manager";
 import { LinkedAccountsManager } from "./linked-accounts";
 import { PushSubscribeButton } from "../notifications/push-subscribe-button";
 import { SettingsInstructions } from "@/components/settings-instructions";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function SettingsPage({
   searchParams,
@@ -35,8 +36,11 @@ export default async function SettingsPage({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Header */}
-      <div>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Settings" fallbackHref="/dashboard" />
+
+      {/* Desktop Header */}
+      <div className="hidden md:block">
         <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">System Settings</h1>
         <p className="text-xs text-zinc-500">
           Manage your personal profile, financial buckets, linked accounts, and security settings.

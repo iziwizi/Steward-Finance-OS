@@ -31,7 +31,14 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, {
+              ...options,
+              path: "/",
+              sameSite: "lax",
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              maxAge: options?.maxAge ?? 60 * 60 * 24 * 30, // 30 days persistent session
+            })
           );
         },
       },
@@ -52,7 +59,13 @@ export async function updateSession(request: NextRequest) {
     url.pathname = pathname;
     const redirectRes = NextResponse.redirect(url);
     response.cookies.getAll().forEach((c) => {
-      redirectRes.cookies.set(c);
+      redirectRes.cookies.set(c.name, c.value, {
+        path: "/",
+        sameSite: "lax",
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 30,
+      });
     });
     return redirectRes;
   }

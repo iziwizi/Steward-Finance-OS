@@ -27,10 +27,15 @@ const ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings, desc: "Profile, buckets & linked accounts" },
 ];
 
+import { MobilePageHeader } from "@/components/mobile-page-header";
+
 export default function MorePage() {
   return (
     <div className="space-y-5 pb-8">
-      <div>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="More Features" fallbackHref="/dashboard" />
+
+      <div className="hidden md:block">
         <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Navigation</p>
         <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">More Menus</h1>
       </div>

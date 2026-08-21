@@ -10,6 +10,7 @@ import { logOut } from "@/lib/actions/auth";
 import { GlobalSearch } from "@/components/global-search";
 import { MobileSearchModal } from "@/components/mobile-search-modal";
 import { MobileProfileMenu } from "@/components/mobile-profile-menu";
+import { getTimeOfDayGreeting, getUserFirstName } from "@/lib/utils/greeting";
 
 const DESKTOP_NAV_MAIN = [
   { href: "/dashboard", label: "Overview" },
@@ -65,6 +66,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   }
 
   const userName = profile?.full_name || (user.user_metadata as any)?.full_name || user.email?.split("@")[0] || "User";
+  const firstName = getUserFirstName(profile?.full_name, user.email);
+  const timeGreeting = getTimeOfDayGreeting();
   const userInitials = userName
     .split(" ")
     .map((n: string) => n[0])
@@ -192,27 +195,35 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        {/* Sticky Mobile Header */}
+        {/* Sticky Mobile Header (Figma Inspired: Left Avatar, Center Greeting + Name, Right Search + Bell) */}
         <header className="sticky top-0 z-30 border-b border-zinc-200/80 bg-white/95 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-2.5">
-            <Link href="/dashboard" className="shrink-0">
-              <Logo variant="full" />
-            </Link>
-            <div className="flex items-center gap-2">
-              <MobileSearchModal />
-              <Link href="/notifications" className="tap-target relative flex items-center justify-center p-1">
-                <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
-                {unreadCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-expense px-1 text-[10px] font-bold text-white">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
-              </Link>
+            <div className="flex items-center gap-2.5 min-w-0">
               <MobileProfileMenu
                 avatarUrl={avatarUrl}
                 userName={userName}
                 userInitials={userInitials}
               />
+              <div className="flex flex-col min-w-0 text-left">
+                <span className="text-[11px] font-medium text-zinc-500 leading-tight truncate">
+                  {timeGreeting},
+                </span>
+                <span className="text-sm font-bold text-zinc-900 leading-tight truncate">
+                  {firstName}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <MobileSearchModal />
+              <Link href="/notifications" className="tap-target relative flex items-center justify-center p-1.5 text-zinc-600 hover:text-zinc-900">
+                <Bell className="h-5 w-5" strokeWidth={1.75} />
+                {unreadCount > 0 && (
+                  <span className="absolute 0 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-expense px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
             </div>
           </div>
         </header>

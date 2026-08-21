@@ -3,6 +3,7 @@ import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { MonthDatePicker } from "@/components/month-date-picker";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function ReportsPage({
   searchParams,
@@ -44,9 +45,12 @@ export default async function ReportsPage({
 
   return (
     <div className="space-y-6 pb-12">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Reports" fallbackHref="/dashboard" />
+
       {/* Header matching Figma desktop-reports */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div>
+        <div className="hidden md:block">
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Financial Reports</h1>
           <p className="text-xs text-zinc-500">
             In-depth summary analysis of your cash flow, savings rate, and category outflows.

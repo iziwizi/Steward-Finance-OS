@@ -18,6 +18,7 @@ import {
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { AllocationToggle } from "./allocation-toggle";
 import { DeleteTransactionButton } from "./delete-button";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export interface TransactionRow {
   id: string;
@@ -246,8 +247,11 @@ export function TransactionsView({
 
   return (
     <div className="space-y-5">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Transactions" fallbackHref="/dashboard" />
+
       {/* Top Header & Action Row */}
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div className="hidden md:flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Transactions</h1>
           <p className="text-xs text-zinc-500">

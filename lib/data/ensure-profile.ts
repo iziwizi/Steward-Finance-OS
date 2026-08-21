@@ -17,17 +17,4 @@ export async function ensureProfile(supabase: SupabaseClient, user: User): Promi
   if (error) {
     console.error("[profile:ensureProfile] failed", { code: error.code, message: error.message });
   }
-
-  // Self-healing: if user_metadata has a legacy oversized base64 avatar URL (>500 chars),
-  // strip it from auth.users metadata immediately to prevent cookie header overflow.
-  const legacyAvatar = (user.user_metadata as any)?.avatar_url;
-  if (typeof legacyAvatar === "string" && (legacyAvatar.startsWith("data:") || legacyAvatar.length > 500)) {
-    try {
-      await supabase.auth.updateUser({
-        data: { avatar_url: null },
-      });
-    } catch {
-      // ignore
-    }
-  }
 }

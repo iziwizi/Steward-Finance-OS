@@ -7,6 +7,7 @@ import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-eng
 import { contributeToGoal, updateGoal, deleteGoal } from "@/lib/actions/goals";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export interface GoalRecord {
   id: string;
@@ -60,8 +61,23 @@ export function GoalsList({
 
   return (
     <div className="space-y-6 pb-12 w-full max-w-full overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader
+        title="Goals"
+        fallbackHref="/dashboard"
+        action={
+          <Link
+            href="/goals/new"
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
+          >
+            <Plus className="h-3 w-3" />
+            <span>New Goal</span>
+          </Link>
+        }
+      />
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Financial Goals</h1>
           <p className="text-xs text-zinc-500">

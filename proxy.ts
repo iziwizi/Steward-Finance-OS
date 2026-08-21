@@ -5,6 +5,8 @@ export async function proxy(request: NextRequest) {
   return updateSession(request);
 }
 
+export const middleware = proxy;
+
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|icons/|brand/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",

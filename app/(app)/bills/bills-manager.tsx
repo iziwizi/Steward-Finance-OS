@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { CreditCard, Plus, Trash2, Edit3, Loader2, X, Check, Calendar, AlertCircle } from "lucide-react";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { createBill, updateBill, deleteBill, markBillPaid } from "@/lib/actions/misc";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export interface BillRecord {
   id: string;
@@ -79,8 +80,24 @@ export function BillsManager({
 
   return (
     <div className="space-y-6 pb-12 w-full max-w-full overflow-hidden">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader
+        title="Bills"
+        fallbackHref="/dashboard"
+        action={
+          <button
+            type="button"
+            onClick={() => setIsAdding(!isAdding)}
+            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
+          >
+            {isAdding ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+            <span>{isAdding ? "Close" : "New"}</span>
+          </button>
+        }
+      />
+
+      {/* Desktop Header */}
+      <div className="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Recurring Bills</h1>
           <p className="text-xs text-zinc-500">

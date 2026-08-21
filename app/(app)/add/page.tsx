@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default function AddPage() {
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Add</h1>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Add Transaction" fallbackHref="/dashboard" />
+
+      <h1 className="hidden md:block text-2xl font-semibold">Add</h1>
       <Link
         href="/income/new"
         className="tap-target flex items-center gap-3 rounded-2xl border border-ink/10 bg-white p-4"

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { recordExpense } from "@/lib/actions/expenses";
+import { MobilePageHeader } from "@/components/mobile-page-header";
 
 export default async function NewExpensePage() {
   const supabase = await createClient();
@@ -20,7 +21,10 @@ export default async function NewExpensePage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Log Expense</h1>
+      {/* App-like Mobile Back Header */}
+      <MobilePageHeader title="Log Expense" fallbackHref="/dashboard" />
+
+      <h1 className="hidden md:block text-2xl font-semibold">Log Expense</h1>
       <form action={recordExpense} className="space-y-4">
         <Field label="Date">
           <input
