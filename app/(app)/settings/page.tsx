@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { User, Sliders, Bell, CreditCard, ShieldAlert, Heart, Download } from "lucide-react";
+import { User, Sliders, Bell, CreditCard, ShieldAlert, BookOpen, Heart, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileForm } from "./profile-form";
 import { BucketManager } from "./bucket-manager";
 import { LinkedAccountsManager } from "./linked-accounts";
 import { PushSubscribeButton } from "../notifications/push-subscribe-button";
+import { SettingsInstructions } from "@/components/settings-instructions";
 
 export default async function SettingsPage({
   searchParams,
@@ -51,6 +52,7 @@ export default async function SettingsPage({
               { id: "profile", label: "Profile", icon: User },
               { id: "accounts", label: "Linked Accounts", icon: CreditCard },
               { id: "allocations", label: "Allocation Percentages", icon: Sliders },
+              { id: "instructions", label: "Instructions & Guide", icon: BookOpen },
               { id: "notifications", label: "Notifications", icon: Bell },
               { id: "security", label: "Security & Deletion", icon: ShieldAlert, danger: true },
             ].map((tab) => {
@@ -99,7 +101,14 @@ export default async function SettingsPage({
             </div>
           )}
 
-          {/* TAB 4: Notifications (Canonical Home for Notification Settings) */}
+          {/* TAB 4: Instructions & Guide */}
+          {currentTab === "instructions" && (
+            <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm">
+              <SettingsInstructions />
+            </div>
+          )}
+
+          {/* TAB 5: Notifications (Canonical Home for Notification Settings) */}
           {currentTab === "notifications" && (
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-5">
               <div className="border-b border-zinc-100 pb-4">
@@ -112,7 +121,7 @@ export default async function SettingsPage({
             </div>
           )}
 
-          {/* TAB 5: Security / Delete Account (Canonical Home for Danger Zone) */}
+          {/* TAB 6: Security / Delete Account (Canonical Home for Danger Zone) */}
           {currentTab === "security" && (
             <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm space-y-4">
               <div className="border-b border-rose-200/60 pb-3">

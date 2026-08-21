@@ -101,3 +101,59 @@ export async function contributeToGoal(formData: FormData) {
   revalidatePath("/dashboard");
   revalidatePath("/celebrations");
 }
+
+export async function updateGoal(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "");
+  const category = String(formData.get("category") || "");
+  const target_amount = Number(formData.get("target_amount") || 0);
+  const current_amount = Number(formData.get("current_amount") || 0);
+  const target_date = String(formData.get("target_date") || "") || null;
+
+  if (!id || !name || !target_amount || target_amount <= 0) {
+    throw new Error("Name and target amount are required.");
+  }
+
+  const { error } = await supabase
+    .from("goals")
+    .update({
+      name,
+      category,
+      target_amount,
+      current_amount,
+      target_date,
+      status: current_amount >= target_amount ? "completed" : current_amount > 0 ? "in_progress" : "not_started",
+    })
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/goals");
+  revalidatePath("/dashboard");
+}
+
+export async function deleteGoal(id: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { error } = await supabase
+    .from("goals")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/goals");
+  revalidatePath("/dashboard");
+}

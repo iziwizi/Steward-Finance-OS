@@ -189,6 +189,21 @@ export function formatNaira(amount: number): string {
   }).format(amount);
 }
 
+export function formatCompactNaira(amount: number): string {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (abs >= 1_000_000_000_000) {
+    return `${sign}₦${(abs / 1_000_000_000_000).toFixed(2)}T`;
+  }
+  if (abs >= 1_000_000_000) {
+    return `${sign}₦${(abs / 1_000_000_000).toFixed(2)}B`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}₦${(abs / 1_000_000).toFixed(2)}M`;
+  }
+  return formatNaira(amount);
+}
+
 /** Reporting period resolution — used by dashboard, reports, and emails alike. */
 export type PeriodPreset =
   | "current_month"

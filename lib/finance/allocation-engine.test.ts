@@ -6,6 +6,8 @@ import {
   calculateAvailableCash,
   calculateBudgetHealth,
   calculateGoalProgress,
+  calculateAllocationProgress,
+  formatCompactNaira,
   resolvePeriod,
   type Bucket,
 } from "./allocation-engine";
@@ -107,6 +109,42 @@ describe("calculateGoalProgress", () => {
     const { remaining, progressPercent } = calculateGoalProgress(1500000, 100000);
     expect(remaining).toBe(1400000);
     expect(progressPercent).toBeCloseTo(6.7, 1);
+  });
+
+  it("safely handles 0 target amount", () => {
+    const { remaining, progressPercent } = calculateGoalProgress(0, 5000);
+    expect(remaining).toBe(0);
+    expect(progressPercent).toBe(0);
+  });
+});
+
+describe("calculateAllocationProgress", () => {
+  it("computes 0% progress when sent is 0", () => {
+    const { planned, sent, remaining, progressPercent } = calculateAllocationProgress(10000, 0);
+    expect(planned).toBe(10000);
+    expect(sent).toBe(0);
+    expect(remaining).toBe(10000);
+    expect(progressPercent).toBe(0);
+  });
+
+  it("computes 50% when half sent", () => {
+    const { remaining, progressPercent } = calculateAllocationProgress(10000, 5000);
+    expect(remaining).toBe(5000);
+    expect(progressPercent).toBe(50);
+  });
+
+  it("caps at 100% when sent exceeds planned", () => {
+    const { remaining, progressPercent } = calculateAllocationProgress(10000, 12000);
+    expect(remaining).toBe(0);
+    expect(progressPercent).toBe(100);
+  });
+});
+
+describe("formatCompactNaira", () => {
+  it("formats billions and trillions cleanly", () => {
+    expect(formatCompactNaira(2_000_000_000)).toBe("₦2.00B");
+    expect(formatCompactNaira(2_000_000_000_000)).toBe("₦2.00T");
+    expect(formatCompactNaira(15_500_000)).toBe("₦15.50M");
   });
 });
 

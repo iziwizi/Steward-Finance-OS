@@ -4,9 +4,10 @@ import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-eng
 import { createClient } from "@/lib/supabase/server";
 import { markCelebrationSeen } from "@/lib/actions/celebrations";
 import { getTimeOfDayGreeting, getUserFirstName } from "@/lib/utils/greeting";
-import { Sparkles, Zap, Calendar } from "lucide-react";
+import { Sparkles, Zap, Calendar, HeartHandshake, Clock, ShieldCheck } from "lucide-react";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { TodaysDecisions } from "@/components/todays-decisions";
+import { FirstTimeWelcomeModal } from "@/components/first-time-welcome-modal";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -48,20 +49,52 @@ export default async function DashboardPage() {
       .from("accounts")
       .select("id, name")
       .eq("user_id", user?.id)
-      .eq("is_active", true),
+      .order("name"),
     supabase
       .from("budget_buckets")
-      .select("id, name")
+      .select("id, name, target_percent")
       .eq("user_id", user?.id)
-      .eq("is_active", true),
+      .eq("is_active", true)
+      .order("sort_order"),
     getDashboardData("current_month"),
   ]);
 
   const firstName = getUserFirstName(profile?.full_name, user?.email);
   const timeGreeting = getTimeOfDayGreeting();
+  const hasIncomeToday = (todayIncome?.length ?? 0) > 0;
+  const hasExpensesToday = (todayExpense?.length ?? 0) > 0;
 
-  const hasIncomeToday = (todayIncome ?? []).length > 0;
-  const hasExpensesToday = (todayExpense ?? []).length > 0;
+  // Dynamic encouragement logic based on current database state (Requirement 9)
+  const titheSent = data.titheSummary.totalSent > 0;
+  const tithePlanned = data.titheSummary.totalPlanned;
+  const anySentBucket = data.budgetHealth.find((b) => b.sentAmount > 0 && b.bucketName !== "Tithe");
+  const pendingAmount = data.allocationSummary.totalPending;
+
+  let encouragement = {
+    title: "Stay intentional.",
+    message: "Review your allocations and keep your financial plan on track for true prosperity.",
+    tone: "neutral",
+  };
+
+  if (titheSent && data.titheSummary.totalSent >= tithePlanned && tithePlanned > 0) {
+    encouragement = {
+      title: "Tithe sent.",
+      message: `You followed through on your ${formatNaira(data.titheSummary.totalSent)} kingdom allocation. Well done.`,
+      tone: "positive",
+    };
+  } else if (anySentBucket) {
+    encouragement = {
+      title: `${anySentBucket.bucketName} allocation sent.`,
+      message: `${formatNaira(anySentBucket.sentAmount)} has been moved toward your ${anySentBucket.bucketName.toLowerCase()} plans.`,
+      tone: "positive",
+    };
+  } else if (pendingAmount > 0) {
+    encouragement = {
+      title: "Your allocations are waiting.",
+      message: `${formatNaira(pendingAmount)} is still waiting to be sent across your active buckets.`,
+      tone: "warning",
+    };
+  }
 
   // Build combined recent transactions table data
   const recentTransactions = [
@@ -120,6 +153,52 @@ export default async function DashboardPage() {
           <p className="text-xs text-zinc-500">
             Here is your financial workspace for today.
           </p>
+        </div>
+      </div>
+
+      {/* First Time User Welcome Modal (One-Time) */}
+      <FirstTimeWelcomeModal />
+
+      {/* Dynamic Database-Driven Encouragement Card */}
+      <div
+        className={`rounded-2xl border p-4.5 shadow-xs transition-all ${
+          encouragement.tone === "positive"
+            ? "border-emerald-200 bg-emerald-50/50 text-emerald-950"
+            : encouragement.tone === "warning"
+            ? "border-amber-200 bg-amber-50/50 text-amber-950"
+            : "border-zinc-200/80 bg-white text-zinc-900"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+              encouragement.tone === "positive"
+                ? "bg-emerald-100 text-emerald-700"
+                : encouragement.tone === "warning"
+                ? "bg-amber-100 text-amber-700"
+                : "bg-brand-50 text-brand-700"
+            }`}
+          >
+            {encouragement.tone === "positive" ? (
+              <ShieldCheck className="h-4 w-4" />
+            ) : encouragement.tone === "warning" ? (
+              <Clock className="h-4 w-4" />
+            ) : (
+              <HeartHandshake className="h-4 w-4" />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-bold">{encouragement.title}</h3>
+            <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
+              {encouragement.message}
+            </p>
+          </div>
+          <Link
+            href="/allocations"
+            className="shrink-0 text-[11px] font-bold text-brand-600 hover:text-brand-700 hover:underline pt-0.5"
+          >
+            View Allocations →
+          </Link>
         </div>
       </div>
 

@@ -152,6 +152,90 @@ export async function updateNotificationPrefs(formData: FormData) {
   revalidatePath("/settings");
 }
 
+export async function updateBill(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "");
+  const category = String(formData.get("category") || "");
+  const amount = Number(formData.get("amount") || 0);
+  const frequency = String(formData.get("frequency") || "monthly");
+  const due_date = String(formData.get("due_date") || "") || null;
+
+  if (!id || !name || !amount || amount <= 0) throw new Error("Name and amount are required.");
+
+  const { error } = await supabase
+    .from("bills")
+    .update({ name, category, amount, frequency, due_date, next_due: due_date })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/bills");
+}
+
+export async function deleteBill(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("bills").delete().eq("id", id).eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/bills");
+}
+
+export async function updateSubscription(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") || "");
+  const service_name = String(formData.get("service_name") || "");
+  const category = String(formData.get("category") || "");
+  const plan = String(formData.get("plan") || "");
+  const cost = Number(formData.get("cost") || 0);
+  const billing_cycle = String(formData.get("billing_cycle") || "monthly");
+
+  if (!id || !service_name || !cost || cost <= 0) throw new Error("Service name and cost are required.");
+
+  const { error } = await supabase
+    .from("subscriptions")
+    .update({ service_name, category, plan, cost, billing_cycle })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/subscriptions");
+}
+
+export async function deleteSubscription(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("subscriptions").delete().eq("id", id).eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/subscriptions");
+}
+
+export async function updateAsset(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") || "");
+  const name = String(formData.get("name") || "");
+  const category = String(formData.get("category") || "");
+  const current_value = Number(formData.get("current_value") || 0);
+  const purchase_price = Number(formData.get("purchase_price") || 0);
+  const location = String(formData.get("location") || "");
+
+  if (!id || !name) throw new Error("Name is required.");
+
+  const { error } = await supabase
+    .from("assets")
+    .update({ name, category, current_value, purchase_price, location })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/assets");
+}
+
+export async function deleteAsset(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("assets").delete().eq("id", id).eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/assets");
+}
+
 export async function createAsset(formData: FormData) {
   const { supabase, user } = await requireUser();
   const name = String(formData.get("name") || "");
@@ -178,6 +262,33 @@ export async function createAsset(formData: FormData) {
 
   revalidatePath("/assets");
   redirect("/assets");
+}
+
+export async function updateWishlistItem(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") || "");
+  const item_name = String(formData.get("item_name") || "");
+  const category = String(formData.get("category") || "");
+  const estimated_cost = Number(formData.get("estimated_cost") || 0);
+  const priority = String(formData.get("priority") || "Medium");
+
+  if (!id || !item_name) throw new Error("Item name is required.");
+
+  const { error } = await supabase
+    .from("wishlist_items")
+    .update({ item_name, category, estimated_cost, priority })
+    .eq("id", id)
+    .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/wishlist");
+}
+
+export async function deleteWishlistItem(id: string) {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase.from("wishlist_items").delete().eq("id", id).eq("user_id", user.id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/wishlist");
 }
 
 export async function createWishlistItem(formData: FormData) {

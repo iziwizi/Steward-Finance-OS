@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { recordIncome } from "@/lib/actions/income";
+import { IncomeForm } from "./income-form";
 
 export default async function NewIncomePage() {
   const supabase = await createClient();
@@ -12,76 +12,18 @@ export default async function NewIncomePage() {
     .eq("user_id", user!.id)
     .order("name");
 
-  const today = new Date().toISOString().slice(0, 10);
-
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Record Income</h1>
-      <form action={recordIncome} className="space-y-4">
-        <Field label="Date">
-          <input
-            type="date"
-            name="txn_date"
-            defaultValue={today}
-            required
-            className="tap-target w-full rounded-xl border border-ink/15 bg-white px-4"
-          />
-        </Field>
-        <Field label="Source">
-          <input
-            type="text"
-            name="source"
-            placeholder="e.g. Salary, Client payment"
-            required
-            className="tap-target w-full rounded-xl border border-ink/15 bg-white px-4"
-          />
-        </Field>
-        <Field label="Account received into">
-          <select
-            name="account_id"
-            className="tap-target w-full rounded-xl border border-ink/15 bg-white px-4"
-          >
-            {(accounts ?? []).map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Amount (₦)">
-          <input
-            type="number"
-            name="amount"
-            inputMode="decimal"
-            step="0.01"
-            min="0"
-            required
-            className="tap-target w-full rounded-xl border border-ink/15 bg-white px-4"
-          />
-        </Field>
-        <Field label="Description">
-          <input
-            type="text"
-            name="description"
-            className="tap-target w-full rounded-xl border border-ink/15 bg-white px-4"
-          />
-        </Field>
-        <button
-          type="submit"
-          className="tap-target w-full rounded-xl bg-accent font-medium text-white"
-        >
-          Save & Calculate Allocations
-        </button>
-      </form>
+    <div className="mx-auto max-w-lg space-y-6 pb-12">
+      <div>
+        <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Record Income</h1>
+        <p className="text-xs text-zinc-500">
+          Inflows are automatically split across your designated budget envelopes with integer kobo precision.
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 md:p-6 shadow-xs">
+        <IncomeForm accounts={accounts ?? []} />
+      </div>
     </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-ink/70">{label}</span>
-      {children}
-    </label>
   );
 }

@@ -22,6 +22,8 @@ import {
   type DailyDecisionRecord,
 } from "@/lib/actions/daily-decisions";
 
+import { IncomeSuccessDialog } from "@/components/income-success-dialog";
+
 interface AccountOption {
   id: string;
   name: string;
@@ -46,7 +48,8 @@ export function TodaysDecisions({
   buckets?: BucketOption[];
 }) {
   const isInitiallyCompleted = !!existingDecision?.completed_at;
-  const [isExpanded, setIsExpanded] = useState(!isInitiallyCompleted);
+  // Requirement 1: Today's Decisions is CLOSED by default on both desktop and mobile
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isSavingCheckIn, startCheckInTransition] = useTransition();
 
   const [hadIncome, setHadIncome] = useState(
@@ -65,6 +68,8 @@ export function TodaysDecisions({
 
   // Active quick action panel: null | "income" | "expense" | "goal"
   const [activePanel, setActivePanel] = useState<"income" | "expense" | "goal" | null>(null);
+  const [showIncomeSuccess, setShowIncomeSuccess] = useState(false);
+  const [lastRecordedIncome, setLastRecordedIncome] = useState(0);
 
   // Quick Action Form States
   // 1. Income Form
@@ -91,21 +96,24 @@ export function TodaysDecisions({
 
   const handleIncomeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!incomeAmount || Number(incomeAmount) <= 0) return;
+    const num = Number(incomeAmount);
+    if (!incomeAmount || num <= 0) return;
 
     startIncomeTransition(async () => {
       const res = await quickRecordIncome({
-        amount: Number(incomeAmount),
+        amount: num,
         description: incomeDesc || "Daily Income",
         account_id: incomeAccount || null,
       });
 
       if (res.success) {
+        setLastRecordedIncome(num);
         setIncomeSavedStatus("recorded");
         setHadIncome(true);
         setActivePanel(null);
         setIncomeAmount("");
         setIncomeDesc("");
+        setShowIncomeSuccess(true);
       }
     });
   };
@@ -901,6 +909,17 @@ export function TodaysDecisions({
           </div>
         </div>
       )}
+
+      {/* Post-Income Next-Step Success Modal */}
+      <IncomeSuccessDialog
+        amount={lastRecordedIncome}
+        isOpen={showIncomeSuccess}
+        onClose={() => setShowIncomeSuccess(false)}
+        onRecordExpense={() => {
+          setIsExpanded(true);
+          setActivePanel("expense");
+        }}
+      />
     </div>
   );
 }
