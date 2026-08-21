@@ -18,10 +18,7 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = 2097152,
     allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
--- 2. Enable RLS on storage.objects (if not already enabled)
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-
--- 3. Storage Policies for 'avatars' Bucket
+-- 2. Storage Policies for 'avatars' Bucket (RLS is enabled by default on storage.objects)
 
 -- Allow public read access to avatar images
 DROP POLICY IF EXISTS "Public avatars are viewable by everyone" ON storage.objects;
