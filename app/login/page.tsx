@@ -11,12 +11,22 @@ export default async function LoginPage({
 
   return (
     <main className="flex min-h-dvh flex-col justify-center bg-paper px-6 py-10">
-      <div className="mx-auto w-full max-w-sm">
-        <Link href="/" className="inline-block">
-          <Logo variant="full" />
-        </Link>
-        <h1 className="mt-8 text-display-md text-zinc-900">Welcome back</h1>
-        <p className="mt-1 text-sm text-zinc-500">Sign in to your financial operating system</p>
+      <div className="mx-auto w-full max-w-sm space-y-6">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="inline-block">
+            <Logo variant="full" />
+          </Link>
+          <Link
+            href="/"
+            className="text-xs font-semibold text-zinc-400 hover:text-zinc-700 transition-colors"
+          >
+            ← Back to Home
+          </Link>
+        </div>
+        <div>
+          <h1 className="text-display-md text-zinc-900">Welcome back</h1>
+          <p className="mt-1 text-sm text-zinc-500">Sign in to your financial operating system</p>
+        </div>
 
         {error === "confirmation_failed" && (
           <p className="mt-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">

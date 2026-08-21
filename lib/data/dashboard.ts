@@ -104,11 +104,18 @@ export async function getDashboardData(
     spentByBucket.set(e.bucket_id, (spentByBucket.get(e.bucket_id) ?? 0) + Number(e.amount));
   }
   const allocatedByBucket = new Map<string, number>();
+  const sentByBucket = new Map<string, number>();
   for (const a of allocations) {
     allocatedByBucket.set(
       a.bucket_id,
       (allocatedByBucket.get(a.bucket_id) ?? 0) + Number(a.planned_amount)
     );
+    if (a.status === "sent") {
+      sentByBucket.set(
+        a.bucket_id,
+        (sentByBucket.get(a.bucket_id) ?? 0) + Number(a.planned_amount)
+      );
+    }
   }
   const budgetHealth = calculateBudgetHealth(
     buckets
@@ -116,7 +123,9 @@ export async function getDashboardData(
       .map((b) => ({
         bucketId: b.id,
         bucketName: b.name,
+        targetPercent: Number(b.target_percent || 0),
         allocated: allocatedByBucket.get(b.id) ?? 0,
+        sent: sentByBucket.get(b.id) ?? 0,
         spent: spentByBucket.get(b.id) ?? 0,
       }))
   );

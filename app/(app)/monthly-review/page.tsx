@@ -160,12 +160,13 @@ export default async function MonthlyReviewPage({
                         <div className="flex justify-between text-xs font-medium">
                           <span className="text-zinc-900">{b.bucketName}</span>
                           <span className="text-zinc-500 font-semibold">
-                            {formatNaira(b.spent)} / {formatNaira(b.allocated)}
+                            <span className="font-bold text-zinc-900">{formatNaira(b.sentAmount)}</span>
+                            <span className="text-zinc-400"> / {formatNaira(b.allocated)}</span>
                           </span>
                         </div>
                         <ProgressBar
-                          percent={b.percentUsed}
-                          tone={b.warning ? "danger" : "brand"}
+                          percent={b.fundingProgress}
+                          tone={b.fundingProgress >= 100 ? "income" : "brand"}
                           className="h-1.5"
                         />
                       </div>

@@ -8,6 +8,7 @@ import { SidebarLink, BottomNavLink } from "./nav-link";
 import { Logo } from "@/components/logo";
 import { logOut } from "@/lib/actions/auth";
 import { GlobalSearch } from "@/components/global-search";
+import { MobileSearchModal } from "@/components/mobile-search-modal";
 
 const DESKTOP_NAV_MAIN = [
   { href: "/dashboard", label: "Overview" },
@@ -21,6 +22,8 @@ const DESKTOP_NAV_PLANNING = [
   { href: "/allocations", label: "Allocations" },
   { href: "/bills", label: "Bills" },
   { href: "/subscriptions", label: "Subscriptions" },
+  { href: "/assets", label: "Assets" },
+  { href: "/wishlist", label: "Wishlist" },
 ];
 
 const DESKTOP_NAV_INSIGHTS = [
@@ -191,14 +194,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Mobile Header */}
         <header className="mx-auto flex max-w-lg items-center justify-between px-4 pt-4 md:hidden">
           <Logo size="sm" />
-          <Link href="/notifications" className="tap-target relative flex items-center justify-center">
-            <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
-            {unreadCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-expense text-[10px] font-medium text-white">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2.5">
+            <MobileSearchModal />
+            <Link href="/notifications" className="tap-target relative flex items-center justify-center p-1">
+              <Bell className="h-5 w-5 text-zinc-600" strokeWidth={1.75} />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-expense text-[10px] font-medium text-white">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/settings?tab=profile"
+              aria-label="Profile Settings"
+              className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-[11px] font-bold text-white shadow-xs ml-0.5"
+            >
+              {avatarUrl ? (
+                <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
+              ) : (
+                <span>{userInitials}</span>
+              )}
+            </Link>
+          </div>
         </header>
 
         <main className="mx-auto max-w-lg px-4 pt-4 md:max-w-7xl md:px-8 md:pt-6">{children}</main>

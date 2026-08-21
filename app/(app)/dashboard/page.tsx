@@ -354,13 +354,14 @@ export default async function DashboardPage() {
                   <div key={b.bucketId} className="space-y-1.5">
                     <div className="flex justify-between text-xs font-semibold">
                       <span className="text-zinc-900">{b.bucketName}</span>
-                      <span className="text-zinc-400 text-[11px]">
-                        {formatNaira(b.spent)} / {formatNaira(b.allocated)}
+                      <span className="text-zinc-500 text-[11px]">
+                        <span className="font-bold text-zinc-900">{formatNaira(b.sentAmount)}</span>
+                        <span className="text-zinc-400"> / {formatNaira(b.allocated)}</span>
                       </span>
                     </div>
                     <ProgressBar
-                      percent={b.percentUsed}
-                      tone={b.warning ? "danger" : b.percentUsed >= 100 ? "income" : "brand"}
+                      percent={b.fundingProgress}
+                      tone={b.fundingProgress >= 100 ? "income" : "brand"}
                       className="h-1.5"
                     />
                   </div>

@@ -19,6 +19,8 @@ import {
   MoreHorizontal,
   Home,
   List,
+  Landmark,
+  Heart,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -32,6 +34,8 @@ const ICONS: Record<string, LucideIcon> = {
   "/settings": Settings,
   "/bills": Receipt,
   "/subscriptions": RefreshCw,
+  "/assets": Landmark,
+  "/wishlist": Heart,
   "/insights": Sparkles,
   "/celebrations": Sparkles,
   "/journal": BookOpen,

@@ -122,23 +122,50 @@ export function calculateAvailableCash(input: {
 export type BudgetLine = {
   bucketId: string;
   bucketName: string;
+  targetPercent?: number;
   allocated: number; // total planned into this bucket for the period
+  sent?: number; // total marked as sent/disbursed for the period
   spent: number; // total expenses tagged to this bucket for the period
 };
 
 export type BudgetHealth = BudgetLine & {
   available: number;
-  percentUsed: number; // 0-100+, can exceed 100 if overspent
+  sentAmount: number;
+  remainingAmount: number;
+  fundingProgress: number; // 0-100% funding progress (sent / allocated)
+  percentUsed: number; // 0-100+, expense ratio (spent / allocated)
   warning: boolean; // true once percentUsed >= 90
 };
 
+export function calculateAllocationProgress(planned: number, sent: number) {
+  const safePlanned = Number(planned) || 0;
+  const safeSent = Number(sent) || 0;
+  const remaining = Math.max(0, toNaira(toKobo(safePlanned) - toKobo(safeSent)));
+  const progressPercent =
+    safePlanned > 0 ? Math.min(100, Math.round((safeSent / safePlanned) * 100)) : 0;
+  return {
+    planned: safePlanned,
+    sent: safeSent,
+    remaining,
+    progressPercent,
+  };
+}
+
 export function calculateBudgetHealth(lines: BudgetLine[]): BudgetHealth[] {
   return lines.map((line) => {
-    const available = toNaira(toKobo(line.allocated) - toKobo(line.spent));
-    const percentUsed = line.allocated > 0 ? (line.spent / line.allocated) * 100 : 0;
+    const safeAllocated = Number(line.allocated) || 0;
+    const safeSent = Number(line.sent ?? 0);
+    const safeSpent = Number(line.spent) || 0;
+    const available = toNaira(toKobo(safeAllocated) - toKobo(safeSpent));
+    const percentUsed = safeAllocated > 0 ? (safeSpent / safeAllocated) * 100 : 0;
+    const allocProgress = calculateAllocationProgress(safeAllocated, safeSent);
+
     return {
       ...line,
       available,
+      sentAmount: safeSent,
+      remainingAmount: allocProgress.remaining,
+      fundingProgress: allocProgress.progressPercent,
       percentUsed: Math.round(percentUsed * 10) / 10,
       warning: percentUsed >= 90,
     };

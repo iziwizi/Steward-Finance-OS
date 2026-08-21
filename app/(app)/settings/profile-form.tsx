@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { updateProfile, uploadAvatar, removeAvatar } from "@/lib/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, AlertCircle, Upload, Trash2 } from "lucide-react";
@@ -12,6 +13,7 @@ export function ProfileForm({
   profile: any;
   userEmail: string;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
@@ -45,6 +47,7 @@ export function ProfileForm({
       if (res.success && res.avatarUrl) {
         setAvatarUrl(res.avatarUrl);
         setStatusMessage({ type: "success", text: "Avatar updated successfully." });
+        router.refresh();
       } else {
         setStatusMessage({ type: "error", text: res.error || "Failed to upload avatar." });
       }
@@ -64,6 +67,7 @@ export function ProfileForm({
       if (res.success) {
         setAvatarUrl(null);
         setStatusMessage({ type: "success", text: "Avatar removed." });
+        router.refresh();
       } else {
         setStatusMessage({ type: "error", text: res.error || "Failed to remove avatar." });
       }
@@ -83,6 +87,7 @@ export function ProfileForm({
       const res = await updateProfile(formData);
       if (res.success) {
         setStatusMessage({ type: "success", text: "Profile changes saved successfully." });
+        router.refresh();
       } else {
         setStatusMessage({ type: "error", text: res.error || "Could not save profile changes." });
       }

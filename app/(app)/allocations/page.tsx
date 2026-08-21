@@ -4,6 +4,7 @@ import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Badge } from "@/components/ui/badge";
+import { TargetPercentEditor } from "@/components/target-percent-editor";
 
 export default async function AllocationsPage() {
   const data = await getDashboardData("current_month");
@@ -139,13 +140,21 @@ export default async function AllocationsPage() {
               ) : (
                 data.budgetHealth.map((b) => {
                   const targetPlanned = b.allocated;
-                  const sent = b.spent;
-                  const remaining = Math.max(0, targetPlanned - sent);
+                  const sent = b.sentAmount;
+                  const remaining = b.remainingAmount;
                   const isComplete = sent >= targetPlanned && targetPlanned > 0;
+                  const progress = b.fundingProgress;
+
                   return (
                     <tr key={b.bucketId} className="transition-colors hover:bg-zinc-50/70">
                       <td className="py-3.5 px-4 font-semibold text-zinc-900">{b.bucketName}</td>
-                      <td className="py-3.5 px-4 font-medium text-zinc-500">{b.percentUsed.toFixed(1)}%</td>
+                      <td className="py-3.5 px-4 font-medium text-zinc-500">
+                        <TargetPercentEditor
+                          bucketId={b.bucketId}
+                          bucketName={b.bucketName}
+                          initialPercent={b.targetPercent ?? 0}
+                        />
+                      </td>
                       <td className="py-3.5 px-4 text-right font-medium text-zinc-700">
                         {formatNaira(targetPlanned)}
                       </td>
@@ -153,13 +162,13 @@ export default async function AllocationsPage() {
                         {formatNaira(sent)}
                       </td>
                       <td className="py-3.5 px-4 text-right font-medium text-zinc-500">
-                        {remaining > 0 ? formatNaira(remaining) : "₦0"}
+                        {remaining > 0 ? formatNaira(remaining) : "₦0.00"}
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-32">
                             <ProgressBar
-                              percent={b.percentUsed}
+                              percent={progress}
                               tone={isComplete ? "income" : "brand"}
                               className="h-2"
                             />
@@ -169,7 +178,7 @@ export default async function AllocationsPage() {
                               isComplete ? "text-emerald-700" : "text-zinc-500"
                             }`}
                           >
-                            {isComplete ? "Complete" : `${Math.round(b.percentUsed)}%`}
+                            {isComplete ? "Complete" : `${progress}%`}
                           </span>
                         </div>
                       </td>

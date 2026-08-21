@@ -396,242 +396,487 @@ export function TodaysDecisions({
             </div>
           </div>
 
-          {/* INLINE QUICK ACTION PANELS (Opens smoothly right below without page exit) */}
-
-          {/* 1. Quick Income Panel */}
-          {activePanel === "income" && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
-                  <span className="text-xs font-bold text-zinc-900">Quick Income Entry</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel(null)}
-                  className="text-zinc-400 hover:text-zinc-600 p-1"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleIncomeSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 50000"
-                    value={incomeAmount}
-                    onChange={(e) => setIncomeAmount(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Source / Description</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Client Payment, Salary"
-                    value={incomeDesc}
-                    onChange={(e) => setIncomeDesc(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Destination Account</label>
-                  <select
-                    value={incomeAccount}
-                    onChange={(e) => setIncomeAccount(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+          {/* DESKTOP INLINE QUICK ACTION PANELS */}
+          <div className="hidden sm:block">
+            {/* 1. Quick Income Panel */}
+            {activePanel === "income" && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
+                    <span className="text-xs font-bold text-zinc-900">Quick Income Entry</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActivePanel(null)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    className="text-zinc-400 hover:text-zinc-600 p-1"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingIncome}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingIncome ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                    Save Income & Calculate Allocations
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </form>
-            </div>
-          )}
 
-          {/* 2. Quick Expense Panel */}
-          {activePanel === "expense" && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ArrowUpRight className="h-4 w-4 text-rose-600" />
-                  <span className="text-xs font-bold text-zinc-900">Quick Expense Entry</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel(null)}
-                  className="text-zinc-400 hover:text-zinc-600 p-1"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                <form onSubmit={handleIncomeSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="e.g. 50000"
+                      value={incomeAmount}
+                      onChange={(e) => setIncomeAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Source / Description</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Client Payment, Salary"
+                      value={incomeDesc}
+                      onChange={(e) => setIncomeDesc(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Destination Account</label>
+                    <select
+                      value={incomeAccount}
+                      onChange={(e) => setIncomeAccount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-emerald-500 focus:outline-none"
+                    >
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel(null)}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingIncome}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+                    >
+                      {isSavingIncome ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      Save Income
+                    </button>
+                  </div>
+                </form>
               </div>
+            )}
 
-              <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 3500"
-                    value={expenseAmount}
-                    onChange={(e) => setExpenseAmount(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-rose-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Description / Vendor</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Lunch, Groceries, Fuel"
-                    value={expenseDesc}
-                    onChange={(e) => setExpenseDesc(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Category Envelope</label>
-                  <select
-                    value={expenseBucket}
-                    onChange={(e) => setExpenseBucket(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-rose-500 focus:outline-none"
-                  >
-                    {buckets.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Paid From Account</label>
-                  <select
-                    value={expenseAccount}
-                    onChange={(e) => setExpenseAccount(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-rose-500 focus:outline-none"
-                  >
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="sm:col-span-4 flex justify-end gap-2 pt-1">
+            {/* 2. Quick Expense Panel */}
+            {activePanel === "expense" && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <ArrowUpRight className="h-4 w-4 text-rose-600" />
+                    <span className="text-xs font-bold text-zinc-900">Quick Expense Entry</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActivePanel(null)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    className="text-zinc-400 hover:text-zinc-600 p-1"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingExpense}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingExpense ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                    Save Expense
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </form>
-            </div>
-          )}
 
-          {/* 3. Quick Goal Panel */}
-          {activePanel === "goal" && (
-            <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Target className="h-4 w-4 text-brand-600" />
-                  <span className="text-xs font-bold text-zinc-900">Quick Goal Setup</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel(null)}
-                  className="text-zinc-400 hover:text-zinc-600 p-1"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="e.g. 3500"
+                      value={expenseAmount}
+                      onChange={(e) => setExpenseAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Description / Vendor</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Lunch, Groceries, Fuel"
+                      value={expenseDesc}
+                      onChange={(e) => setExpenseDesc(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Category Envelope</label>
+                    <select
+                      value={expenseBucket}
+                      onChange={(e) => setExpenseBucket(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-rose-500 focus:outline-none"
+                    >
+                      {buckets.map((b) => (
+                        <option key={b.id} value={b.id}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Paid From Account</label>
+                    <select
+                      value={expenseAccount}
+                      onChange={(e) => setExpenseAccount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-rose-500 focus:outline-none"
+                    >
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-4 flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel(null)}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingExpense}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-rose-600 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-rose-700 active:scale-95 disabled:opacity-50"
+                    >
+                      {isSavingExpense ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      Save Expense
+                    </button>
+                  </div>
+                </form>
               </div>
+            )}
 
-              <form onSubmit={handleGoalSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Goal Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. New Laptop, Rent 2027"
-                    value={goalName}
-                    onChange={(e) => setGoalName(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Target Amount (₦)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="e.g. 500000"
-                    value={goalTargetAmount}
-                    onChange={(e) => setGoalTargetAmount(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold uppercase text-zinc-500">Target Date (Optional)</label>
-                  <input
-                    type="date"
-                    value={goalTargetDate}
-                    onChange={(e) => setGoalTargetDate(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-brand-500 focus:outline-none"
-                  />
-                </div>
-                <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+            {/* 3. Quick Goal Panel */}
+            {activePanel === "goal" && (
+              <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-4 animate-in fade-in zoom-in-95 duration-fast">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Target className="h-4 w-4 text-brand-600" />
+                    <span className="text-xs font-bold text-zinc-900">Quick Goal Setup</span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => setActivePanel(null)}
-                    className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    className="text-zinc-400 hover:text-zinc-600 p-1"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingGoal}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-600 active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingGoal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                    Create Goal
+                    <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
-              </form>
+
+                <form onSubmit={handleGoalSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Goal Title</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. New Laptop, Rent 2027"
+                      value={goalName}
+                      onChange={(e) => setGoalName(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Target Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="e.g. 500000"
+                      value={goalTargetAmount}
+                      onChange={(e) => setGoalTargetAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Target Date (Optional)</label>
+                    <input
+                      type="date"
+                      value={goalTargetDate}
+                      onChange={(e) => setGoalTargetDate(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel(null)}
+                      className="rounded-lg px-3 py-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingGoal}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-brand-600 active:scale-95 disabled:opacity-50"
+                    >
+                      {isSavingGoal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      Create Goal
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+          </div>
+
+          {/* MOBILE MODAL QUICK ACTION DIALOG */}
+          {activePanel && (
+            <div className="fixed inset-0 z-50 flex items-end sm:hidden bg-black/60 backdrop-blur-xs p-3 animate-in fade-in duration-fast">
+              <div className="w-full max-h-[85vh] overflow-y-auto rounded-2xl bg-white p-5 space-y-4 shadow-2xl border border-zinc-200">
+                {activePanel === "income" && (
+                  <>
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
+                        <h3 className="text-sm font-bold text-zinc-900">Quick Income Entry</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActivePanel(null)}
+                        className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleIncomeSubmit} className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="e.g. 50000"
+                          value={incomeAmount}
+                          onChange={(e) => setIncomeAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Source / Description</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Salary, Client payment"
+                          value={incomeDesc}
+                          onChange={(e) => setIncomeDesc(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Destination Account</label>
+                        <select
+                          value={incomeAccount}
+                          onChange={(e) => setIncomeAccount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                        >
+                          {accounts.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setActivePanel(null)}
+                          className="flex-1 rounded-xl border border-zinc-200 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingIncome}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          {isSavingIncome ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Save Income
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+
+                {activePanel === "expense" && (
+                  <>
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpRight className="h-4 w-4 text-rose-600" />
+                        <h3 className="text-sm font-bold text-zinc-900">Quick Expense Entry</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActivePanel(null)}
+                        className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleExpenseSubmit} className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="e.g. 3500"
+                          value={expenseAmount}
+                          onChange={(e) => setExpenseAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Description / Vendor</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Lunch, Groceries, Fuel"
+                          value={expenseDesc}
+                          onChange={(e) => setExpenseDesc(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Category Envelope</label>
+                        <select
+                          value={expenseBucket}
+                          onChange={(e) => setExpenseBucket(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        >
+                          {buckets.map((b) => (
+                            <option key={b.id} value={b.id}>
+                              {b.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Paid From Account</label>
+                        <select
+                          value={expenseAccount}
+                          onChange={(e) => setExpenseAccount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        >
+                          {accounts.map((a) => (
+                            <option key={a.id} value={a.id}>
+                              {a.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setActivePanel(null)}
+                          className="flex-1 rounded-xl border border-zinc-200 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingExpense}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 py-3 text-xs font-bold text-white shadow-md hover:bg-rose-700 disabled:opacity-50"
+                        >
+                          {isSavingExpense ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Save Expense
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+
+                {activePanel === "goal" && (
+                  <>
+                    <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-brand-600" />
+                        <h3 className="text-sm font-bold text-zinc-900">Quick Goal Setup</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setActivePanel(null)}
+                        className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+
+                    <form onSubmit={handleGoalSubmit} className="space-y-3">
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Goal Title</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Emergency Fund, Laptop"
+                          value={goalName}
+                          onChange={(e) => setGoalName(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-brand-500 focus:outline-none"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Target Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="e.g. 500000"
+                          value={goalTargetAmount}
+                          onChange={(e) => setGoalTargetAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Target Date (Optional)</label>
+                        <input
+                          type="date"
+                          value={goalTargetDate}
+                          onChange={(e) => setGoalTargetDate(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => setActivePanel(null)}
+                          className="flex-1 rounded-xl border border-zinc-200 py-3 text-xs font-bold text-zinc-600 hover:bg-zinc-50"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          disabled={isSavingGoal}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-500 py-3 text-xs font-bold text-white shadow-md hover:bg-brand-600 disabled:opacity-50"
+                        >
+                          {isSavingGoal ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                          Create Goal
+                        </button>
+                      </div>
+                    </form>
+                  </>
+                )}
+              </div>
             </div>
           )}
 

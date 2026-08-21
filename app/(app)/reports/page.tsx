@@ -187,25 +187,38 @@ export default async function ReportsPage({
             <span className="text-xs text-zinc-400 font-semibold">{monthDisplayName}</span>
           </div>
 
-          <div className="space-y-3.5">
-            {data.budgetHealth.length === 0 ? (
-              <p className="text-xs text-zinc-400 py-4 text-center">No category expense records found.</p>
-            ) : (
-              data.budgetHealth.map((cat) => (
-                <div key={cat.bucketId} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="font-semibold text-zinc-900">{cat.bucketName}</span>
-                    <span className="text-zinc-500 font-bold">{formatNaira(cat.spent)}</span>
-                  </div>
-                  <ProgressBar
-                    percent={cat.percentUsed}
-                    tone={cat.warning ? "danger" : "brand"}
-                    className="h-1.5"
-                  />
-                </div>
-              ))
-            )}
-          </div>
+            <div className="space-y-3.5">
+              {data.budgetHealth.length === 0 ? (
+                <p className="text-xs text-zinc-400 py-4 text-center">No category expense records found.</p>
+              ) : (
+                data.budgetHealth.map((cat) => {
+                  const spendPercent =
+                    data.totalExpenses > 0
+                      ? Math.min(100, Math.round((cat.spent / data.totalExpenses) * 100))
+                      : 0;
+                  return (
+                    <div key={cat.bucketId} className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="font-semibold text-zinc-900">{cat.bucketName}</span>
+                        <span className="text-zinc-500 font-bold">
+                          {formatNaira(cat.spent)}
+                          {data.totalExpenses > 0 && cat.spent > 0 && (
+                            <span className="text-[10px] text-zinc-400 font-normal ml-1">
+                              ({spendPercent}%)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      <ProgressBar
+                        percent={spendPercent}
+                        tone={cat.warning ? "danger" : "brand"}
+                        className="h-1.5"
+                      />
+                    </div>
+                  );
+                })
+              )}
+            </div>
         </div>
       </div>
     </div>

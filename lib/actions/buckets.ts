@@ -127,3 +127,23 @@ export async function deleteBucket(formData: FormData) {
 
   revalidatePath("/settings");
 }
+
+export async function updateBucketTargetPercent(bucketId: string, targetPercent: number) {
+  const { supabase, user } = await requireUser();
+  const validPercent = Math.max(0, Math.min(100, Number(targetPercent) || 0));
+
+  const { error } = await supabase
+    .from("budget_buckets")
+    .update({ target_percent: validPercent })
+    .eq("id", bucketId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
+  revalidatePath("/settings");
+  return { success: true };
+}

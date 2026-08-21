@@ -44,6 +44,7 @@ export async function updateProfile(formData: FormData): Promise<{ success: bool
       console.warn("Profile update error:", error);
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/settings");
     revalidatePath("/dashboard");
     return { success: true };
@@ -102,6 +103,7 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
       console.warn("profiles.avatar_url update note:", dbErr);
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/settings");
     revalidatePath("/dashboard");
     return { success: true, avatarUrl: publicUrl };
@@ -131,6 +133,7 @@ export async function removeAvatar(): Promise<{ success: boolean; error?: string
       console.warn("profiles.avatar_url clear note:", dbErr);
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/settings");
     revalidatePath("/dashboard");
     return { success: true };

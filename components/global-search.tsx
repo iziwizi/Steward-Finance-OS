@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Search, Loader2, Target, Receipt, RefreshCw, BookOpen, ArrowLeftRight, X } from "lucide-react";
+import { Search, Loader2, Target, Receipt, RefreshCw, BookOpen, ArrowLeftRight, Landmark, Compass, X } from "lucide-react";
 import { searchWorkspace, type SearchResultItem } from "@/lib/actions/search";
 
 export function GlobalSearch() {
@@ -13,7 +13,7 @@ export function GlobalSearch() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!query || query.trim().length < 2) {
+    if (!query || query.trim().length < 1) {
       setResults([]);
       setLoading(false);
       return;
@@ -29,7 +29,7 @@ export function GlobalSearch() {
       } finally {
         setLoading(false);
       }
-    }, 200);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -40,12 +40,21 @@ export function GlobalSearch() {
         setIsOpen(false);
       }
     }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setIsOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const getCategoryIcon = (category: SearchResultItem["category"]) => {
     switch (category) {
+      case "navigation":
+        return Compass;
       case "transaction":
         return ArrowLeftRight;
       case "goal":
@@ -54,6 +63,8 @@ export function GlobalSearch() {
         return Receipt;
       case "subscription":
         return RefreshCw;
+      case "asset":
+        return Landmark;
       case "journal":
         return BookOpen;
       default:
