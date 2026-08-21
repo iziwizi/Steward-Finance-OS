@@ -3,6 +3,7 @@ import { Zap, Calendar, ArrowUpRight, ArrowDownLeft, CheckCircle2, ChevronLeft, 
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { MonthDatePicker } from "@/components/month-date-picker";
 
 export default async function MonthlyReviewPage({
   searchParams,
@@ -47,27 +48,12 @@ export default async function MonthlyReviewPage({
         </div>
 
         {/* Month Switcher Controls */}
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/monthly-review?month=${prevMonthKey}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
-            title="Previous Month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Link>
-
-          <span className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-800 shadow-xs">
-            {monthDisplayName}
-          </span>
-
-          <Link
-            href={`/monthly-review?month=${nextMonthKey}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
-            title="Next Month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
+        <MonthDatePicker
+          currentMonth={selectedMonth}
+          baseUrl="/monthly-review"
+          prevMonthKey={prevMonthKey}
+          nextMonthKey={nextMonthKey}
+        />
       </div>
 
       {!hasData ? (

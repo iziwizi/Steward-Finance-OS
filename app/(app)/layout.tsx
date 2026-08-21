@@ -74,44 +74,46 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <ConnectionBanner />
 
       {/* Figma Desktop Sidebar */}
-      <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:justify-between md:border-r md:border-zinc-200/80 md:bg-white md:px-4 md:py-6">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <Logo size="md" />
+      <aside className="hidden md:sticky md:top-0 md:flex md:h-dvh md:w-64 md:shrink-0 md:flex-col md:border-r md:border-zinc-200/80 md:bg-white md:px-4 md:py-4">
+        {/* Top Full Logo */}
+        <div className="flex items-center justify-between px-1 pb-4 shrink-0 border-b border-zinc-100/80">
+          <Link href="/dashboard" className="inline-block">
+            <Logo variant="full" />
+          </Link>
+        </div>
+
+        {/* Scrollable Navigation Area */}
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-3 pr-1">
+          <nav className="space-y-1">
+            {DESKTOP_NAV_MAIN.map((item) => (
+              <SidebarLink key={item.href} {...item} />
+            ))}
+          </nav>
+
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              Planning
+            </p>
+            {DESKTOP_NAV_PLANNING.map((item) => (
+              <SidebarLink key={item.href} {...item} />
+            ))}
           </div>
 
-          <div className="space-y-5">
-            <nav className="space-y-1">
-              {DESKTOP_NAV_MAIN.map((item) => (
-                <SidebarLink key={item.href} {...item} />
-              ))}
-            </nav>
-
-            <div className="space-y-1">
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                Planning
-              </p>
-              {DESKTOP_NAV_PLANNING.map((item) => (
-                <SidebarLink key={item.href} {...item} />
-              ))}
-            </div>
-
-            <div className="space-y-1">
-              <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                Insights
-              </p>
-              {DESKTOP_NAV_INSIGHTS.map((item) => (
-                <SidebarLink key={item.href} {...item} />
-              ))}
-            </div>
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              Insights
+            </p>
+            {DESKTOP_NAV_INSIGHTS.map((item) => (
+              <SidebarLink key={item.href} {...item} />
+            ))}
           </div>
         </div>
 
-        {/* User Card & Branding at bottom of sidebar with proper spacing and separation */}
-        <div className="space-y-3 pt-6 border-t border-zinc-100 mt-auto">
-          <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-3">
+        {/* User Card & Branding at bottom of sidebar - firmly anchored & visible */}
+        <div className="shrink-0 space-y-2.5 pt-3 border-t border-zinc-100">
+          <div className="rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-2.5">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-2 min-w-0">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500 font-bold text-white text-xs">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover" />
@@ -119,15 +121,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                     <span>{userInitials}</span>
                   )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-zinc-900">{userName}</p>
                   <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 shrink-0">
                 <Link
                   href="/settings?tab=profile"
-                  className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700"
+                  className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-zinc-700 transition-colors"
                   title="Settings"
                 >
                   <SettingsIcon className="h-3.5 w-3.5" />
@@ -135,7 +137,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 <form action={logOut}>
                   <button
                     type="submit"
-                    className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-rose-600"
+                    className="rounded p-1 text-zinc-400 hover:bg-zinc-200 hover:text-rose-600 transition-colors"
                     title="Log out"
                   >
                     <LogOut className="h-3.5 w-3.5" />
@@ -146,7 +148,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* MUJTEKNIFY Product Attribution */}
-          <div className="px-2 text-center">
+          <div className="px-2 text-center pb-1">
             <a
               href="https://mujteknify.com"
               target="_blank"

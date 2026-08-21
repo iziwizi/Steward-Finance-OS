@@ -21,6 +21,8 @@ export default async function DashboardPage() {
     { data: todayDecision },
     { data: todayIncome },
     { data: todayExpense },
+    { data: userAccounts },
+    { data: userBuckets },
     data,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle(),
@@ -42,6 +44,16 @@ export default async function DashboardPage() {
       .eq("user_id", user?.id)
       .eq("txn_date", todayStr)
       .limit(1),
+    supabase
+      .from("accounts")
+      .select("id, name")
+      .eq("user_id", user?.id)
+      .eq("is_active", true),
+    supabase
+      .from("budget_buckets")
+      .select("id, name")
+      .eq("user_id", user?.id)
+      .eq("is_active", true),
     getDashboardData("current_month"),
   ]);
 
@@ -111,11 +123,13 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Today's Decisions Section */}
+      {/* Today's Decisions Section with Inline Quick Actions */}
       <TodaysDecisions
         existingDecision={todayDecision ?? null}
         hasIncomeToday={hasIncomeToday}
         hasExpensesToday={hasExpensesToday}
+        accounts={userAccounts ?? []}
+        buckets={userBuckets ?? []}
       />
 
       {/* Celebration Banner if present */}

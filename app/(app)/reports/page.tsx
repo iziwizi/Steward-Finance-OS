@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { TrendingUp, Calendar, ChevronLeft, ChevronRight, BarChart2 } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { MonthDatePicker } from "@/components/month-date-picker";
 
 export default async function ReportsPage({
   searchParams,
@@ -53,29 +53,13 @@ export default async function ReportsPage({
           </p>
         </div>
 
-        {/* Month Selector */}
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/reports?month=${prevMonthKey}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
-            title="Previous Month"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Link>
-
-          <span className="flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-bold text-zinc-800 shadow-xs">
-            <Calendar className="h-3.5 w-3.5 text-zinc-400" />
-            <span>{monthDisplayName}</span>
-          </span>
-
-          <Link
-            href={`/reports?month=${nextMonthKey}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 shadow-xs hover:bg-zinc-50"
-            title="Next Month"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Link>
-        </div>
+        {/* Interactive Month & Date Selector Popover */}
+        <MonthDatePicker
+          currentMonth={selectedMonth}
+          baseUrl="/reports"
+          prevMonthKey={prevMonthKey}
+          nextMonthKey={nextMonthKey}
+        />
       </div>
 
       {/* 4 Summary Cards matching Figma desktop-reports */}

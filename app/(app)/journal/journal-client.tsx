@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Plus, Trash2, Calendar, BookOpen, X, Loader2 } from "lucide-react";
+import { Plus, Trash2, Calendar, BookOpen, X, Loader2, Sparkles } from "lucide-react";
 import { createJournalEntry, deleteJournalEntry } from "@/lib/actions/misc";
 import { Button } from "@/components/ui/button";
 
@@ -94,7 +94,7 @@ export function JournalClient({
 
       {/* Right Column: Selected Entry Viewer or Editor Form (8/12 cols) */}
       <div className="space-y-6 lg:col-span-8">
-        {isFormOpen || entries.length === 0 ? (
+        {isFormOpen ? (
           /* New Entry Form */
           <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm animate-in fade-in duration-fast">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
@@ -261,7 +261,26 @@ export function JournalClient({
               </button>
             </div>
           </div>
-        ) : null}
+        ) : (
+          /* Reader Empty State when no entries exist and form is closed */
+          <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-12 text-center text-xs text-zinc-400 space-y-3">
+            <BookOpen className="mx-auto h-8 w-8 text-zinc-300" />
+            <p className="font-semibold text-sm text-zinc-800">Financial Journal Reader</p>
+            <p className="max-w-sm mx-auto text-zinc-500">
+              Document your financial learnings, milestones, and strategic commitments alongside your raw ledgers.
+            </p>
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setIsFormOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-brand-600 active:scale-95"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                + Create First Reflection
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

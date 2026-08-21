@@ -13,6 +13,7 @@ import {
   FileSpreadsheet,
   FileText,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { AllocationToggle } from "./allocation-toggle";
@@ -82,6 +83,11 @@ export function TransactionsView({
   const [customTo, setCustomTo] = useState("");
 
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [expandedTxIds, setExpandedTxIds] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpandedTxIds((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   const filteredRows = useMemo(() => {
     const now = new Date();
@@ -509,63 +515,106 @@ export function TransactionsView({
                   </td>
                 </tr>
               ) : (
-                filteredRows.map((tx) => (
-                  <tr key={tx.id} className="transition-colors hover:bg-zinc-50/70">
-                    <td className="py-3.5 px-4 font-medium text-zinc-500">{tx.formattedDate}</td>
-                    <td className="py-3.5 px-4 font-semibold text-zinc-900">
-                      <div>
-                        <span className="truncate block max-w-xs">{tx.description}</span>
-                        {tx.allocations.length > 0 && (
-                          <div className="mt-1.5 space-y-1">
-                            {tx.allocations.map((a: any) => (
-                              <div
-                                key={a.id}
-                                className="flex items-center gap-2 text-[11px] font-normal text-zinc-500"
+                filteredRows.map((tx) => {
+                  const totalAllocated = tx.allocations.reduce(
+                    (s: number, a: any) => s + Number(a.planned_amount || 0),
+                    0
+                  );
+                  const isExpanded = !!expandedTxIds[tx.id];
+
+                  return (
+                    <tr key={tx.id} className="transition-colors hover:bg-zinc-50/70 align-top">
+                      <td className="py-3.5 px-4 font-medium text-zinc-500 whitespace-nowrap">
+                        {tx.formattedDate}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="space-y-1">
+                          <span className="block font-bold text-zinc-900 text-xs">{tx.description}</span>
+                          <span className="block text-[11px] font-normal text-zinc-400">
+                            {tx.category} · {tx.account}
+                          </span>
+
+                          {tx.allocations.length > 0 && (
+                            <div className="pt-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleExpand(tx.id)}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 hover:bg-zinc-100 hover:border-zinc-300 transition-all"
                               >
-                                <span className="text-zinc-600 font-medium">
-                                  {a.budget_buckets?.name}:
-                                </span>
-                                <span>{formatNaira(Number(a.planned_amount))}</span>
-                                <AllocationToggle id={a.id} status={a.status} />
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="inline-block rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
-                        {tx.category}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-zinc-400">{tx.account}</td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                          tx.status === "Cleared" ? "text-zinc-700" : "text-amber-700"
+                                <span>{tx.allocations.length} allocations</span>
+                                <span className="text-zinc-400">·</span>
+                                <span>{formatNaira(totalAllocated)}</span>
+                                <ChevronDown
+                                  className={`h-3 w-3 text-zinc-400 transition-transform ${
+                                    isExpanded ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+
+                              {isExpanded && (
+                                <div className="mt-2 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3 space-y-2 animate-in fade-in zoom-in-95 duration-fast max-w-md">
+                                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-200/60 pb-1.5">
+                                    <span>Envelope Breakdown</span>
+                                    <span>Status</span>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    {tx.allocations.map((a: any) => (
+                                      <div
+                                        key={a.id}
+                                        className="flex items-center justify-between text-[11px]"
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium text-zinc-700">
+                                            {a.budget_buckets?.name}:
+                                          </span>
+                                          <span className="font-semibold text-zinc-900">
+                                            {formatNaira(Number(a.planned_amount))}
+                                          </span>
+                                        </div>
+                                        <AllocationToggle id={a.id} status={a.status} />
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span className="inline-block rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-700">
+                          {tx.category}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-zinc-400 whitespace-nowrap">{tx.account}</td>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                            tx.status === "Cleared" ? "text-zinc-700" : "text-amber-700"
+                          }`}
+                        >
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              tx.status === "Cleared" ? "bg-emerald-500" : "bg-amber-500"
+                            }`}
+                          />
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td
+                        className={`py-3.5 px-4 text-right font-bold whitespace-nowrap ${
+                          tx.type === "income" ? "text-emerald-600" : "text-zinc-900"
                         }`}
                       >
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            tx.status === "Cleared" ? "bg-emerald-500" : "bg-amber-500"
-                          }`}
-                        />
-                        {tx.status}
-                      </span>
-                    </td>
-                    <td
-                      className={`py-3.5 px-4 text-right font-bold ${
-                        tx.type === "income" ? "text-emerald-600" : "text-zinc-900"
-                      }`}
-                    >
-                      {tx.type === "income" ? "+" : "-"}
-                      {formatNaira(tx.amount)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <DeleteTransactionButton onDelete={tx.deleteAction} />
-                    </td>
-                  </tr>
-                ))
+                        {tx.type === "income" ? "+" : "-"}
+                        {formatNaira(tx.amount)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <DeleteTransactionButton onDelete={tx.deleteAction} />
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -585,43 +634,93 @@ export function TransactionsView({
                 {group.label}
               </p>
               <div className="rounded-xl border border-zinc-200/80 bg-white divide-y divide-zinc-100 shadow-xs overflow-hidden">
-                {group.items.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3.5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div
-                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                          tx.type === "income"
-                            ? "bg-emerald-50 text-emerald-600"
-                            : "bg-zinc-100 text-zinc-600"
-                        }`}
-                      >
-                        {tx.type === "income" ? (
-                          <ArrowDownLeft className="h-4 w-4" />
-                        ) : (
-                          <ArrowUpRight className="h-4 w-4" />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-xs font-bold text-zinc-900">{tx.description}</p>
-                        <p className="truncate text-[10px] text-zinc-400">
-                          {tx.category} · {tx.account}
-                        </p>
-                      </div>
-                    </div>
+                {group.items.map((tx) => {
+                  const isExpanded = !!expandedTxIds[tx.id];
+                  const totalAllocated = tx.allocations.reduce(
+                    (s: number, a: any) => s + Number(a.planned_amount || 0),
+                    0
+                  );
 
-                    <div className="text-right shrink-0 ml-3">
-                      <p
-                        className={`text-xs font-bold ${
-                          tx.type === "income" ? "text-emerald-600" : "text-zinc-900"
-                        }`}
-                      >
-                        {tx.type === "income" ? "+" : "-"}
-                        {formatNaira(tx.amount)}
-                      </p>
-                      <span className="text-[9px] font-medium text-zinc-400">{tx.status}</span>
+                  return (
+                    <div key={tx.id} className="p-3.5 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                              tx.type === "income"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : "bg-zinc-100 text-zinc-600"
+                            }`}
+                          >
+                            {tx.type === "income" ? (
+                              <ArrowDownLeft className="h-4 w-4" />
+                            ) : (
+                              <ArrowUpRight className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-bold text-zinc-900">{tx.description}</p>
+                            <p className="truncate text-[10px] text-zinc-400">
+                              {tx.category} · {tx.account}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0 ml-3">
+                          <p
+                            className={`text-xs font-bold ${
+                              tx.type === "income" ? "text-emerald-600" : "text-zinc-900"
+                            }`}
+                          >
+                            {tx.type === "income" ? "+" : "-"}
+                            {formatNaira(tx.amount)}
+                          </p>
+                          <span className="text-[9px] font-medium text-zinc-400">{tx.status}</span>
+                        </div>
+                      </div>
+
+                      {tx.allocations && tx.allocations.length > 0 && (
+                        <div className="pt-2 border-t border-zinc-100">
+                          <button
+                            type="button"
+                            onClick={() => toggleExpand(tx.id)}
+                            className="flex items-center justify-between w-full text-[11px] font-semibold text-zinc-600 hover:text-zinc-900 py-0.5"
+                          >
+                            <span>
+                              {tx.allocations.length} Allocations ({formatNaira(totalAllocated)})
+                            </span>
+                            <ChevronDown
+                              className={`h-3.5 w-3.5 text-zinc-400 transition-transform ${
+                                isExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+
+                          {isExpanded && (
+                            <div className="mt-2 rounded-lg bg-zinc-50 p-2.5 space-y-2 animate-in fade-in duration-fast">
+                              {tx.allocations.map((a: any) => (
+                                <div
+                                  key={a.id}
+                                  className="flex items-center justify-between text-[10px]"
+                                >
+                                  <span className="font-medium text-zinc-700">
+                                    {a.budget_buckets?.name}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-zinc-900">
+                                      {formatNaira(Number(a.planned_amount))}
+                                    </span>
+                                    <AllocationToggle id={a.id} status={a.status} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))

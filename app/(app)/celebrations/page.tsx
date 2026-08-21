@@ -1,4 +1,4 @@
-import { Sparkles, Award, TrendingUp, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Sparkles, Award, TrendingUp, Compass, ArrowUpRight, CheckCircle2, ShieldCheck, Flame } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getRealOperationalInsights } from "@/lib/data/insights";
 import Link from "next/link";
@@ -38,13 +38,16 @@ export default async function CelebrationsPage() {
         {/* Left Column: Operational Insights (7/12 cols) */}
         <div className="space-y-4 lg:col-span-7">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-zinc-900">Operational Insights</h2>
-            <span className="text-xs font-semibold text-zinc-400">
+            <div className="flex items-center gap-2">
+              <Compass className="h-4 w-4 text-brand-600" />
+              <h2 className="text-sm font-bold text-zinc-900">Operational Insights</h2>
+            </div>
+            <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-bold text-zinc-600">
               {operationalInsights.length} Available
             </span>
           </div>
 
-          <div className="space-y-3.5">
+          <div className="space-y-4">
             {operationalInsights.length === 0 ? (
               <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-8 text-center text-xs text-zinc-400">
                 <TrendingUp className="mx-auto h-8 w-8 text-zinc-300 mb-2" />
@@ -65,16 +68,21 @@ export default async function CelebrationsPage() {
               operationalInsights.map((item) => (
                 <div
                   key={item.id}
-                  className={`rounded-xl border-l-4 border-r border-t border-b border-zinc-200/80 bg-white p-4.5 shadow-xs ${item.borderTone}`}
+                  className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-xs transition-all hover:border-zinc-300 hover:shadow-sm space-y-3"
                 >
-                  <div className="flex items-center justify-between text-[10px]">
-                    <span className="font-bold uppercase tracking-wider text-zinc-400">
+                  <div className="flex items-center justify-between">
+                    <span className="rounded-md bg-zinc-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-zinc-600">
                       {item.category}
                     </span>
-                    <span className={item.tagTone}>{item.tag}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold border ${item.tagTone.includes("emerald") ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-amber-50 text-amber-700 border-amber-100"}`}>
+                      {item.tag}
+                    </span>
                   </div>
-                  <h3 className="mt-1.5 text-xs font-bold text-zinc-900">{item.title}</h3>
-                  <p className="mt-1 text-xs text-zinc-600 leading-relaxed">{item.desc}</p>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-zinc-900">{item.title}</h3>
+                    <p className="mt-1.5 text-xs text-zinc-600 leading-relaxed">{item.desc}</p>
+                  </div>
                 </div>
               ))
             )}
@@ -84,14 +92,16 @@ export default async function CelebrationsPage() {
         {/* Right Column: Celebrations (5/12 cols) */}
         <div className="space-y-4 lg:col-span-5">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
               <h2 className="text-sm font-bold text-zinc-900">Celebrations</h2>
-              <p className="text-[10px] text-zinc-400">Positive milestones and stewardship badges achieved.</p>
             </div>
-            <span className="text-xs text-zinc-400 font-semibold">{celebrationList.length} Recorded</span>
+            <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-bold text-amber-700">
+              {celebrationList.length} Recorded
+            </span>
           </div>
 
-          <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
+          <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
             {celebrationList.length === 0 ? (
               <div className="py-8 text-center text-xs text-zinc-400 space-y-2">
                 <Award className="mx-auto h-8 w-8 text-zinc-300" />
