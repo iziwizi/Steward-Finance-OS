@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getAuthRedirectOrigin } from "@/lib/supabase/redirect-url";
 import type { AuthActionState } from "@/lib/actions/auth-state";
@@ -101,17 +102,30 @@ export async function logIn(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") || "");
-  const password = String(formData.get("password") || "");
+  const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "").trim();
 
   if (!email || !password) return { error: "Email and password are required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     console.error("[auth:logIn] failed", { status: error.status, code: error.code, message: error.message });
     return { error: friendlyLoginError(error.message) };
+  }
+
+  // Self-heal: If user metadata contains a bloated legacy base64 avatar URL (>500 chars),
+  // strip it from auth.users metadata immediately so the session JWT shrinks down to <1KB
+  const rawMeta = (authData?.user?.user_metadata as any)?.avatar_url;
+  if (typeof rawMeta === "string" && (rawMeta.startsWith("data:") || rawMeta.length > 500)) {
+    try {
+      await supabase.auth.updateUser({
+        data: { avatar_url: null },
+      });
+    } catch {
+      // ignore
+    }
   }
 
   redirect("/dashboard");
@@ -120,5 +134,19 @@ export async function logIn(
 export async function logOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
+
+  // Purge any cookie chunks
+  try {
+    const cookieStore = await cookies();
+    const all = cookieStore.getAll();
+    for (const c of all) {
+      if (c.name.startsWith("sb-")) {
+        cookieStore.delete(c.name);
+      }
+    }
+  } catch {
+    // ignore
+  }
+
   redirect("/login");
 }

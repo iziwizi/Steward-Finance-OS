@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./service-worker-register";
 import { InstallPrompt } from "./install-prompt";
+import { CookieSanitizer } from "@/components/cookie-sanitizer";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
@@ -39,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
+        <CookieSanitizer />
         {children}
         <ServiceWorkerRegister />
         <InstallPrompt />

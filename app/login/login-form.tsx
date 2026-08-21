@@ -12,8 +12,27 @@ export function LoginForm() {
   const [state, formAction, pending] = useActionState(logIn, initialAuthState);
   const [showPassword, setShowPassword] = useState(false);
 
+  const handleSubmit = (formData: FormData) => {
+    // Client-side defense: Clean up any old bloated cookie chunks before sending request
+    try {
+      if (typeof document !== "undefined") {
+        const rawCookies = document.cookie.split("; ");
+        for (const cookieStr of rawCookies) {
+          const [name, ...valParts] = cookieStr.split("=");
+          const val = valParts.join("=");
+          if (val.length > 2500 || val.includes("data%3Aimage") || val.includes("data:image")) {
+            document.cookie = `${name}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax;`;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+    formAction(formData);
+  };
+
   return (
-    <form action={formAction} className="mt-8 space-y-5 animate-fade-in-up">
+    <form action={handleSubmit} className="mt-8 space-y-5 animate-fade-in-up">
       {state.error && (
         <p role="alert" className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
           {state.error}
