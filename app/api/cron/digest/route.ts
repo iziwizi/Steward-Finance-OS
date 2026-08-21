@@ -19,9 +19,14 @@ function isoDate(d: Date) {
  * mechanism (notification_log, unique on user+type+period).
  */
 export async function GET(request: Request) {
+  const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please provide valid Bearer CRON_SECRET." },
+      { status: 401 }
+    );
   }
 
   const supabase = createBackgroundClient();

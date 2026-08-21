@@ -70,7 +70,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .join("")
     .toUpperCase()
     .slice(0, 2) || "MA";
-  const avatarUrl = profile?.avatar_url || (user.user_metadata as any)?.avatar_url || null;
+  const avatarUrl = profile?.avatar_url || null;
 
   return (
     <div className="min-h-dvh bg-paper pb-20 md:flex md:pb-0">

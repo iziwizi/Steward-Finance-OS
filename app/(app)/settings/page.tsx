@@ -28,7 +28,7 @@ export default async function SettingsPage({
 
   const resolvedProfile = {
     ...profile,
-    avatar_url: profile?.avatar_url || (user?.user_metadata as any)?.avatar_url || null,
+    avatar_url: profile?.avatar_url || null,
   };
 
   const accountList = accounts ?? [];

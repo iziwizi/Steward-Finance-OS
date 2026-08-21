@@ -10,6 +10,10 @@ const PUBLIC_PREFIXES = [
   "/offline",
   "/brand",
   "/icons",
+  "/api/cron",
+  "/manifest.webmanifest",
+  "/apple-icon.png",
+  "/icon.png",
 ];
 
 export async function updateSession(request: NextRequest) {
@@ -42,13 +46,13 @@ export async function updateSession(request: NextRequest) {
   const isRootLanding = path === "/";
   const isPublic = isRootLanding || PUBLIC_PREFIXES.some((p) => path.startsWith(p));
 
-  // Helper to construct a redirect that preserves any refreshed session cookies
+  // Helper to construct a redirect that preserves all refreshed session cookies and options
   function makeRedirect(pathname: string) {
     const url = request.nextUrl.clone();
     url.pathname = pathname;
     const redirectRes = NextResponse.redirect(url);
     response.cookies.getAll().forEach((c) => {
-      redirectRes.cookies.set(c.name, c.value);
+      redirectRes.cookies.set(c);
     });
     return redirectRes;
   }

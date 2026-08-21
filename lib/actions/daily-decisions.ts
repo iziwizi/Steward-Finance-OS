@@ -143,21 +143,24 @@ export async function quickRecordIncome(data: {
 
 export async function quickRecordExpense(data: {
   amount: number;
-  description: string;
+  description?: string;
+  reason?: string;
+  vendor?: string;
   bucket_id?: string | null;
   payment_account_id?: string | null;
   txn_date?: string;
-  vendor?: string;
+  receipt_status?: string;
 }): Promise<{ success: boolean; id?: string; error?: string }> {
   try {
     const { supabase, user } = await requireUser();
     const txn_date = data.txn_date || new Date().toISOString().slice(0, 10);
     const amount = Number(data.amount);
-    const description = data.description || "Daily Expense";
-    const reason = description;
+    const reason = data.reason || data.description || "Daily Expense";
+    const description = data.description || reason;
     const vendor = data.vendor || "";
     const bucket_id = data.bucket_id || null;
     const payment_account_id = data.payment_account_id || null;
+    const receipt_status = data.receipt_status || "paid";
 
     if (!amount || amount <= 0) {
       return { success: false, error: "Please enter a valid positive amount." };
@@ -174,7 +177,7 @@ export async function quickRecordExpense(data: {
         payment_account_id,
         amount,
         description,
-        receipt_status: "verified",
+        receipt_status,
       })
       .select("id")
       .single();
@@ -191,6 +194,7 @@ export async function quickRecordExpense(data: {
       await celebrateFirstExpense(supabase, user.id);
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/dashboard");
     revalidatePath("/transactions");
     revalidatePath("/reports");
@@ -203,6 +207,7 @@ export async function quickRecordExpense(data: {
 export async function quickCreateGoal(data: {
   name: string;
   target_amount: number;
+  current_amount?: number;
   target_date?: string | null;
   category?: string;
   bucket_id?: string | null;
@@ -211,6 +216,7 @@ export async function quickCreateGoal(data: {
     const { supabase, user } = await requireUser();
     const name = data.name.trim();
     const target_amount = Number(data.target_amount);
+    const current_amount = Number(data.current_amount || 0);
     const target_date = data.target_date || null;
     const category = data.category || "Savings";
     const bucket_id = data.bucket_id || null;
@@ -228,9 +234,9 @@ export async function quickCreateGoal(data: {
         bucket_id,
         priority: "medium",
         target_amount,
-        current_amount: 0,
+        current_amount,
         target_date,
-        status: "not_started",
+        status: current_amount >= target_amount ? "completed" : current_amount > 0 ? "in_progress" : "not_started",
       })
       .select("id")
       .single();
@@ -239,6 +245,7 @@ export async function quickCreateGoal(data: {
       return { success: false, error: error.message };
     }
 
+    revalidatePath("/", "layout");
     revalidatePath("/dashboard");
     revalidatePath("/goals");
     return { success: true, id: goal?.id };

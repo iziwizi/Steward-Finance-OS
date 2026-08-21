@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import {
-  CheckCircle2,
   CalendarCheck,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Plus,
   ArrowDownLeft,
   ArrowUpRight,
   Target,
-  ChevronDown,
-  ChevronUp,
+  Sparkles,
   Loader2,
   Check,
-  Plus,
   X,
 } from "lucide-react";
 import {
@@ -21,37 +23,41 @@ import {
   quickCreateGoal,
   type DailyDecisionRecord,
 } from "@/lib/actions/daily-decisions";
-
 import { IncomeSuccessDialog } from "@/components/income-success-dialog";
+
+interface BucketOption {
+  id: string;
+  name: string;
+  targetPercent?: number;
+}
 
 interface AccountOption {
   id: string;
   name: string;
 }
 
-interface BucketOption {
-  id: string;
-  name: string;
+interface TodaysDecisionsProps {
+  existingDecision: DailyDecisionRecord | null;
+  hasIncomeToday: boolean;
+  hasExpensesToday: boolean;
+  accounts: AccountOption[];
+  buckets: BucketOption[];
 }
 
 export function TodaysDecisions({
   existingDecision,
   hasIncomeToday,
   hasExpensesToday,
-  accounts = [],
-  buckets = [],
-}: {
-  existingDecision: DailyDecisionRecord | null;
-  hasIncomeToday: boolean;
-  hasExpensesToday: boolean;
-  accounts?: AccountOption[];
-  buckets?: BucketOption[];
-}) {
-  const isInitiallyCompleted = !!existingDecision?.completed_at;
-  // Requirement 1: Today's Decisions is CLOSED by default on both desktop and mobile
+  accounts,
+  buckets,
+}: TodaysDecisionsProps) {
+  const isInitiallyCompleted = Boolean(existingDecision?.completed_at);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isSavingCheckIn, startCheckInTransition] = useTransition();
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Core 3 Decision states
   const [hadIncome, setHadIncome] = useState(
     existingDecision ? existingDecision.had_income : hasIncomeToday
   );
@@ -71,25 +77,33 @@ export function TodaysDecisions({
   const [showIncomeSuccess, setShowIncomeSuccess] = useState(false);
   const [lastRecordedIncome, setLastRecordedIncome] = useState(0);
 
-  // Quick Action Form States
+  // Canonical Form States
   // 1. Income Form
+  const [incomeDate, setIncomeDate] = useState(todayStr);
   const [incomeAmount, setIncomeAmount] = useState("");
+  const [incomeSource, setIncomeSource] = useState("");
   const [incomeDesc, setIncomeDesc] = useState("");
   const [incomeAccount, setIncomeAccount] = useState(accounts[0]?.id || "");
   const [isSavingIncome, startIncomeTransition] = useTransition();
   const [incomeSavedStatus, setIncomeSavedStatus] = useState(hasIncomeToday ? "recorded" : "");
 
   // 2. Expense Form
+  const [expenseDate, setExpenseDate] = useState(todayStr);
   const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseReason, setExpenseReason] = useState("");
+  const [expenseVendor, setExpenseVendor] = useState("");
   const [expenseDesc, setExpenseDesc] = useState("");
   const [expenseBucket, setExpenseBucket] = useState(buckets[0]?.id || "");
   const [expenseAccount, setExpenseAccount] = useState(accounts[0]?.id || "");
+  const [expenseReceiptStatus, setExpenseReceiptStatus] = useState("paid");
   const [isSavingExpense, startExpenseTransition] = useTransition();
   const [expenseSavedStatus, setExpenseSavedStatus] = useState(hasExpensesToday ? "recorded" : "");
 
   // 3. Goal Form
   const [goalName, setGoalName] = useState("");
+  const [goalCategory, setGoalCategory] = useState("Savings");
   const [goalTargetAmount, setGoalTargetAmount] = useState("");
+  const [goalCurrentAmount, setGoalCurrentAmount] = useState("0");
   const [goalTargetDate, setGoalTargetDate] = useState("");
   const [isSavingGoal, startGoalTransition] = useTransition();
   const [goalSavedStatus, setGoalSavedStatus] = useState("");
@@ -102,8 +116,10 @@ export function TodaysDecisions({
     startIncomeTransition(async () => {
       const res = await quickRecordIncome({
         amount: num,
-        description: incomeDesc || "Daily Income",
+        source: incomeSource || "Income Deposit",
+        description: incomeDesc || incomeSource || "Income Deposit",
         account_id: incomeAccount || null,
+        txn_date: incomeDate || todayStr,
       });
 
       if (res.success) {
@@ -112,6 +128,7 @@ export function TodaysDecisions({
         setHadIncome(true);
         setActivePanel(null);
         setIncomeAmount("");
+        setIncomeSource("");
         setIncomeDesc("");
         setShowIncomeSuccess(true);
       }
@@ -120,14 +137,19 @@ export function TodaysDecisions({
 
   const handleExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!expenseAmount || Number(expenseAmount) <= 0) return;
+    const num = Number(expenseAmount);
+    if (!expenseAmount || num <= 0) return;
 
     startExpenseTransition(async () => {
       const res = await quickRecordExpense({
-        amount: Number(expenseAmount),
-        description: expenseDesc || "Daily Expense",
+        amount: num,
+        reason: expenseReason || "Daily Expense",
+        vendor: expenseVendor || "",
+        description: expenseDesc || expenseReason || "Daily Expense",
         bucket_id: expenseBucket || null,
         payment_account_id: expenseAccount || null,
+        txn_date: expenseDate || todayStr,
+        receipt_status: expenseReceiptStatus || "paid",
       });
 
       if (res.success) {
@@ -135,6 +157,8 @@ export function TodaysDecisions({
         setHadExpenses(true);
         setActivePanel(null);
         setExpenseAmount("");
+        setExpenseReason("");
+        setExpenseVendor("");
         setExpenseDesc("");
       }
     });
@@ -142,12 +166,15 @@ export function TodaysDecisions({
 
   const handleGoalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!goalName || !goalTargetAmount || Number(goalTargetAmount) <= 0) return;
+    const targetNum = Number(goalTargetAmount);
+    if (!goalName || !goalTargetAmount || targetNum <= 0) return;
 
     startGoalTransition(async () => {
       const res = await quickCreateGoal({
-        name: goalName,
-        target_amount: Number(goalTargetAmount),
+        name: goalName.trim(),
+        category: goalCategory || "Savings",
+        target_amount: targetNum,
+        current_amount: Number(goalCurrentAmount || 0),
         target_date: goalTargetDate || null,
       });
 
@@ -157,6 +184,7 @@ export function TodaysDecisions({
         setActivePanel(null);
         setGoalName("");
         setGoalTargetAmount("");
+        setGoalCurrentAmount("0");
         setGoalTargetDate("");
       }
     });
@@ -186,7 +214,7 @@ export function TodaysDecisions({
             <CalendarCheck className="h-4 w-4" />
           </div>
           <div>
-            <h3 className="text-xs font-bold text-zinc-900">Today's Decisions</h3>
+            <h3 className="text-xs font-bold text-zinc-900">Today&apos;s Decisions</h3>
             <p className="text-[10px] text-zinc-400">Daily intentional financial stewardship check-in</p>
           </div>
         </div>
@@ -198,30 +226,21 @@ export function TodaysDecisions({
               Completed
             </span>
           ) : null}
-
           <button
             type="button"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center gap-1 text-[11px] font-semibold text-brand-600 hover:text-brand-700"
+            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-50 flex items-center gap-1 transition-colors"
           >
-            {isExpanded ? (
-              <>
-                <span>Collapse</span>
-                <ChevronUp className="h-3.5 w-3.5" />
-              </>
-            ) : (
-              <>
-                <span>{isSaved ? "Review / Edit" : "Start Check-in"}</span>
-                <ChevronDown className="h-3.5 w-3.5" />
-              </>
-            )}
+            <span>{isExpanded ? "Collapse" : "Open Check-in"}</span>
+            {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
           </button>
         </div>
       </div>
 
       {/* Expanded Interactive Body */}
       {isExpanded && (
-        <div className="p-4 space-y-4 animate-in fade-in duration-fast">
+        <div className="p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-fast">
+          {/* 3 Core Daily Stewardship Questions Grid */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {/* DECISION 1: Money In */}
             <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 flex flex-col justify-between space-y-3">
@@ -386,7 +405,7 @@ export function TodaysDecisions({
             <div className="rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3.5 flex flex-col justify-between space-y-3">
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Decision 4</p>
-                <p className="text-xs font-bold text-zinc-900 mt-1">Today's Focus Action</p>
+                <p className="text-xs font-bold text-zinc-900 mt-1">Today&apos;s Focus Action</p>
               </div>
               <div>
                 <select
@@ -412,7 +431,7 @@ export function TodaysDecisions({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs font-bold text-zinc-900">Quick Income Entry</span>
+                    <span className="text-xs font-bold text-zinc-900">Log Income (Canonical)</span>
                   </div>
                   <button
                     type="button"
@@ -423,32 +442,30 @@ export function TodaysDecisions({
                   </button>
                 </div>
 
-                <form onSubmit={handleIncomeSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <form onSubmit={handleIncomeSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Date</label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="date"
                       required
-                      placeholder="e.g. 50000"
-                      value={incomeAmount}
-                      onChange={(e) => setIncomeAmount(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Source / Description</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Client Payment, Salary"
-                      value={incomeDesc}
-                      onChange={(e) => setIncomeDesc(e.target.value)}
+                      value={incomeDate}
+                      onChange={(e) => setIncomeDate(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Destination Account</label>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Source</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Salary, Client payment"
+                      value={incomeSource}
+                      onChange={(e) => setIncomeSource(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Receiving Account</label>
                     <select
                       value={incomeAccount}
                       onChange={(e) => setIncomeAccount(e.target.value)}
@@ -461,7 +478,30 @@ export function TodaysDecisions({
                       ))}
                     </select>
                   </div>
-                  <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      placeholder="e.g. 50000"
+                      value={incomeAmount}
+                      onChange={(e) => setIncomeAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Description (Optional)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. August retainer fee"
+                      value={incomeDesc}
+                      onChange={(e) => setIncomeDesc(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-4 flex justify-end gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => setActivePanel(null)}
@@ -488,7 +528,7 @@ export function TodaysDecisions({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <ArrowUpRight className="h-4 w-4 text-rose-600" />
-                    <span className="text-xs font-bold text-zinc-900">Quick Expense Entry</span>
+                    <span className="text-xs font-bold text-zinc-900">Log Expense (Canonical)</span>
                   </div>
                   <button
                     type="button"
@@ -501,25 +541,12 @@ export function TodaysDecisions({
 
                 <form onSubmit={handleExpenseSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Date</label>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="date"
                       required
-                      placeholder="e.g. 3500"
-                      value={expenseAmount}
-                      onChange={(e) => setExpenseAmount(e.target.value)}
-                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-rose-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Description / Vendor</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Lunch, Groceries, Fuel"
-                      value={expenseDesc}
-                      onChange={(e) => setExpenseDesc(e.target.value)}
+                      value={expenseDate}
+                      onChange={(e) => setExpenseDate(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
                     />
                   </div>
@@ -538,7 +565,28 @@ export function TodaysDecisions({
                     </select>
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Paid From Account</label>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Reason / Category</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Groceries, Data, Fuel"
+                      value={expenseReason}
+                      onChange={(e) => setExpenseReason(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Vendor</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Spar, MTN, Uber"
+                      value={expenseVendor}
+                      onChange={(e) => setExpenseVendor(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Payment Account</label>
                     <select
                       value={expenseAccount}
                       onChange={(e) => setExpenseAccount(e.target.value)}
@@ -550,6 +598,41 @@ export function TodaysDecisions({
                         </option>
                       ))}
                     </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      placeholder="e.g. 3500"
+                      value={expenseAmount}
+                      onChange={(e) => setExpenseAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Receipt Status</label>
+                    <select
+                      value={expenseReceiptStatus}
+                      onChange={(e) => setExpenseReceiptStatus(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-rose-500 focus:outline-none"
+                    >
+                      <option value="paid">Paid</option>
+                      <option value="unpaid">Unpaid</option>
+                      <option value="na">N/A</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Description</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Office lunch"
+                      value={expenseDesc}
+                      onChange={(e) => setExpenseDesc(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-rose-500 focus:outline-none"
+                    />
                   </div>
                   <div className="sm:col-span-4 flex justify-end gap-2 pt-1">
                     <button
@@ -578,7 +661,7 @@ export function TodaysDecisions({
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <Target className="h-4 w-4 text-brand-600" />
-                    <span className="text-xs font-bold text-zinc-900">Quick Goal Setup</span>
+                    <span className="text-xs font-bold text-zinc-900">Create Goal (Canonical)</span>
                   </div>
                   <button
                     type="button"
@@ -589,31 +672,59 @@ export function TodaysDecisions({
                   </button>
                 </div>
 
-                <form onSubmit={handleGoalSubmit} className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div>
+                <form onSubmit={handleGoalSubmit} className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                  <div className="sm:col-span-2">
                     <label className="text-[10px] font-bold uppercase text-zinc-500">Goal Title</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. New Laptop, Rent 2027"
+                      placeholder="e.g. Rent Fund, Emergency 2027"
                       value={goalName}
                       onChange={(e) => setGoalName(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
                     />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold uppercase text-zinc-500">Target Amount (₦)</label>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Category</label>
+                    <select
+                      value={goalCategory}
+                      onChange={(e) => setGoalCategory(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-brand-500 focus:outline-none"
+                    >
+                      <option value="Savings">Savings</option>
+                      <option value="Emergency">Emergency</option>
+                      <option value="Real Estate">Real Estate</option>
+                      <option value="Vehicle">Vehicle</option>
+                      <option value="Education">Education</option>
+                      <option value="Investment">Investment</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Target (₦)</label>
                     <input
                       type="number"
                       step="0.01"
+                      min="1"
                       required
-                      placeholder="e.g. 500000"
+                      placeholder="e.g. 1500000"
                       value={goalTargetAmount}
                       onChange={(e) => setGoalTargetAmount(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-900 focus:border-brand-500 focus:outline-none"
                     />
                   </div>
                   <div>
+                    <label className="text-[10px] font-bold uppercase text-zinc-500">Initial Saved (₦)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0"
+                      value={goalCurrentAmount}
+                      onChange={(e) => setGoalCurrentAmount(e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
                     <label className="text-[10px] font-bold uppercase text-zinc-500">Target Date (Optional)</label>
                     <input
                       type="date"
@@ -622,7 +733,7 @@ export function TodaysDecisions({
                       className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-800 focus:border-brand-500 focus:outline-none"
                     />
                   </div>
-                  <div className="sm:col-span-3 flex justify-end gap-2 pt-1">
+                  <div className="sm:col-span-5 flex justify-end gap-2 pt-1">
                     <button
                       type="button"
                       onClick={() => setActivePanel(null)}
@@ -653,7 +764,7 @@ export function TodaysDecisions({
                     <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                       <div className="flex items-center gap-2">
                         <ArrowDownLeft className="h-4 w-4 text-emerald-600" />
-                        <h3 className="text-sm font-bold text-zinc-900">Quick Income Entry</h3>
+                        <h3 className="text-sm font-bold text-zinc-900">Log Income</h3>
                       </div>
                       <button
                         type="button"
@@ -666,31 +777,28 @@ export function TodaysDecisions({
 
                     <form onSubmit={handleIncomeSubmit} className="space-y-3">
                       <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Date</label>
                         <input
-                          type="number"
-                          step="0.01"
+                          type="date"
                           required
-                          placeholder="e.g. 50000"
-                          value={incomeAmount}
-                          onChange={(e) => setIncomeAmount(e.target.value)}
-                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
-                          autoFocus
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Source / Description</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Salary, Client payment"
-                          value={incomeDesc}
-                          onChange={(e) => setIncomeDesc(e.target.value)}
+                          value={incomeDate}
+                          onChange={(e) => setIncomeDate(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Destination Account</label>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Source</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Salary, Client payment"
+                          value={incomeSource}
+                          onChange={(e) => setIncomeSource(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Receiving Account</label>
                         <select
                           value={incomeAccount}
                           onChange={(e) => setIncomeAccount(e.target.value)}
@@ -702,6 +810,29 @@ export function TodaysDecisions({
                             </option>
                           ))}
                         </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          placeholder="e.g. 50000"
+                          value={incomeAmount}
+                          onChange={(e) => setIncomeAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Description (Optional)</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. August retainer"
+                          value={incomeDesc}
+                          onChange={(e) => setIncomeDesc(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-emerald-500 focus:outline-none"
+                        />
                       </div>
                       <div className="flex gap-2 pt-2">
                         <button
@@ -729,7 +860,7 @@ export function TodaysDecisions({
                     <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                       <div className="flex items-center gap-2">
                         <ArrowUpRight className="h-4 w-4 text-rose-600" />
-                        <h3 className="text-sm font-bold text-zinc-900">Quick Expense Entry</h3>
+                        <h3 className="text-sm font-bold text-zinc-900">Log Expense</h3>
                       </div>
                       <button
                         type="button"
@@ -742,26 +873,12 @@ export function TodaysDecisions({
 
                     <form onSubmit={handleExpenseSubmit} className="space-y-3">
                       <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Date</label>
                         <input
-                          type="number"
-                          step="0.01"
+                          type="date"
                           required
-                          placeholder="e.g. 3500"
-                          value={expenseAmount}
-                          onChange={(e) => setExpenseAmount(e.target.value)}
-                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
-                          autoFocus
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Description / Vendor</label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. Lunch, Groceries, Fuel"
-                          value={expenseDesc}
-                          onChange={(e) => setExpenseDesc(e.target.value)}
+                          value={expenseDate}
+                          onChange={(e) => setExpenseDate(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
                         />
                       </div>
@@ -780,7 +897,28 @@ export function TodaysDecisions({
                         </select>
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold uppercase text-zinc-500">Paid From Account</label>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Reason / Category</label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Groceries, Data, Fuel"
+                          value={expenseReason}
+                          onChange={(e) => setExpenseReason(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Vendor</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Spar, MTN"
+                          value={expenseVendor}
+                          onChange={(e) => setExpenseVendor(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Payment Account</label>
                         <select
                           value={expenseAccount}
                           onChange={(e) => setExpenseAccount(e.target.value)}
@@ -791,6 +929,31 @@ export function TodaysDecisions({
                               {a.name}
                             </option>
                           ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          placeholder="e.g. 3500"
+                          value={expenseAmount}
+                          onChange={(e) => setExpenseAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Receipt Status</label>
+                        <select
+                          value={expenseReceiptStatus}
+                          onChange={(e) => setExpenseReceiptStatus(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-rose-500 focus:outline-none"
+                        >
+                          <option value="paid">Paid</option>
+                          <option value="unpaid">Unpaid</option>
+                          <option value="na">N/A</option>
                         </select>
                       </div>
                       <div className="flex gap-2 pt-2">
@@ -819,7 +982,7 @@ export function TodaysDecisions({
                     <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-brand-600" />
-                        <h3 className="text-sm font-bold text-zinc-900">Quick Goal Setup</h3>
+                        <h3 className="text-sm font-bold text-zinc-900">Create Goal</h3>
                       </div>
                       <button
                         type="button"
@@ -840,19 +1003,46 @@ export function TodaysDecisions({
                           value={goalName}
                           onChange={(e) => setGoalName(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-brand-500 focus:outline-none"
-                          autoFocus
                         />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Category</label>
+                        <select
+                          value={goalCategory}
+                          onChange={(e) => setGoalCategory(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-800 focus:bg-white focus:border-brand-500 focus:outline-none"
+                        >
+                          <option value="Savings">Savings</option>
+                          <option value="Emergency">Emergency</option>
+                          <option value="Real Estate">Real Estate</option>
+                          <option value="Vehicle">Vehicle</option>
+                          <option value="Education">Education</option>
+                          <option value="Investment">Investment</option>
+                        </select>
                       </div>
                       <div>
                         <label className="text-[10px] font-bold uppercase text-zinc-500">Target Amount (₦)</label>
                         <input
                           type="number"
                           step="0.01"
+                          min="1"
                           required
                           placeholder="e.g. 500000"
                           value={goalTargetAmount}
                           onChange={(e) => setGoalTargetAmount(e.target.value)}
                           className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm font-bold text-zinc-900 focus:bg-white focus:border-brand-500 focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold uppercase text-zinc-500">Initial Saved Amount (₦)</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0"
+                          value={goalCurrentAmount}
+                          onChange={(e) => setGoalCurrentAmount(e.target.value)}
+                          className="mt-1 w-full rounded-xl border border-zinc-200 bg-zinc-50 p-2.5 text-sm text-zinc-900 focus:bg-white focus:border-brand-500 focus:outline-none"
                         />
                       </div>
                       <div>

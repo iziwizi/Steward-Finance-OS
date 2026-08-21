@@ -159,49 +159,6 @@ export default async function DashboardPage() {
       {/* First Time User Welcome Modal (One-Time) */}
       <FirstTimeWelcomeModal />
 
-      {/* Dynamic Database-Driven Encouragement Card */}
-      <div
-        className={`rounded-2xl border p-4.5 shadow-xs transition-all ${
-          encouragement.tone === "positive"
-            ? "border-emerald-200 bg-emerald-50/50 text-emerald-950"
-            : encouragement.tone === "warning"
-            ? "border-amber-200 bg-amber-50/50 text-amber-950"
-            : "border-zinc-200/80 bg-white text-zinc-900"
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
-              encouragement.tone === "positive"
-                ? "bg-emerald-100 text-emerald-700"
-                : encouragement.tone === "warning"
-                ? "bg-amber-100 text-amber-700"
-                : "bg-brand-50 text-brand-700"
-            }`}
-          >
-            {encouragement.tone === "positive" ? (
-              <ShieldCheck className="h-4 w-4" />
-            ) : encouragement.tone === "warning" ? (
-              <Clock className="h-4 w-4" />
-            ) : (
-              <HeartHandshake className="h-4 w-4" />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-xs font-bold">{encouragement.title}</h3>
-            <p className="text-[11px] text-zinc-600 mt-0.5 leading-relaxed">
-              {encouragement.message}
-            </p>
-          </div>
-          <Link
-            href="/allocations"
-            className="shrink-0 text-[11px] font-bold text-brand-600 hover:text-brand-700 hover:underline pt-0.5"
-          >
-            View Allocations →
-          </Link>
-        </div>
-      </div>
-
       {/* Today's Decisions Section with Inline Quick Actions */}
       <TodaysDecisions
         existingDecision={todayDecision ?? null}
@@ -211,27 +168,21 @@ export default async function DashboardPage() {
         buckets={userBuckets ?? []}
       />
 
-      {/* Celebration Banner if present */}
-      {data.latestCelebration && (
-        <form
-          action={async () => {
-            "use server";
-            await markCelebrationSeen(data.latestCelebration!.id);
-          }}
+      {/* Authoritative Dynamic Celebration / Encouragement Card (Yellow Card below Today's Decisions) */}
+      <div className="flex w-full items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-left shadow-xs transition-all">
+        <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-zinc-900 text-xs sm:text-sm">{encouragement.title}</p>
+          <p className="text-xs text-zinc-600 mt-0.5 leading-relaxed">{encouragement.message}</p>
+        </div>
+        <Link
+          href="/allocations"
+          className="text-xs font-semibold text-amber-800 hover:text-amber-900 hover:underline shrink-0 pt-0.5 inline-flex items-center gap-1"
         >
-          <button
-            type="submit"
-            className="tap-target flex w-full items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left shadow-sm transition-transform active:scale-[0.99]"
-          >
-            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-            <div className="flex-1">
-              <p className="font-semibold text-zinc-900">{data.latestCelebration.title}</p>
-              <p className="text-xs text-zinc-600">{data.latestCelebration.message}</p>
-            </div>
-            <span className="text-xs font-semibold text-amber-700">Dismiss</span>
-          </button>
-        </form>
-      )}
+          <span>Allocations</span>
+          <span>→</span>
+        </Link>
+      </div>
 
       {/* 4 Metrics Cards Row — Matching Figma desktop-dashboard */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
