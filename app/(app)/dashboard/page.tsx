@@ -25,6 +25,8 @@ export default async function DashboardPage() {
     { data: userAccounts },
     { data: userBuckets },
     data,
+    { data: latestSentAllocations },
+    { data: latestPendingAllocations },
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle(),
     supabase
@@ -57,6 +59,21 @@ export default async function DashboardPage() {
       .eq("is_active", true)
       .order("sort_order"),
     getDashboardData("current_month"),
+    supabase
+      .from("allocations")
+      .select("id, planned_amount, status, sent_at, budget_buckets(name)")
+      .eq("user_id", user?.id)
+      .eq("status", "sent")
+      .not("sent_at", "is", null)
+      .order("sent_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("allocations")
+      .select("id, planned_amount, status, created_at, budget_buckets(name)")
+      .eq("user_id", user?.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   const firstName = getUserFirstName(profile?.full_name, user?.email);
@@ -64,11 +81,10 @@ export default async function DashboardPage() {
   const hasIncomeToday = (todayIncome?.length ?? 0) > 0;
   const hasExpensesToday = (todayExpense?.length ?? 0) > 0;
 
-  // Dynamic encouragement logic based on current database state (Requirement 9)
-  const titheSent = data.titheSummary.totalSent > 0;
-  const tithePlanned = data.titheSummary.totalPlanned;
-  const anySentBucket = data.budgetHealth.find((b) => b.sentAmount > 0 && b.bucketName !== "Tithe");
+  // Dynamic encouragement logic based on actual recent database events & obligations
+  const mostRecentSent = latestSentAllocations?.[0];
   const pendingAmount = data.allocationSummary.totalPending;
+  const totalSent = data.allocationSummary.totalSent;
 
   let encouragement = {
     title: "Stay intentional.",
@@ -76,23 +92,39 @@ export default async function DashboardPage() {
     tone: "neutral",
   };
 
-  if (titheSent && data.titheSummary.totalSent >= tithePlanned && tithePlanned > 0) {
-    encouragement = {
-      title: "Tithe sent.",
-      message: `You followed through on your ${formatNaira(data.titheSummary.totalSent)} kingdom allocation. Well done.`,
-      tone: "positive",
-    };
-  } else if (anySentBucket) {
-    encouragement = {
-      title: `${anySentBucket.bucketName} allocation sent.`,
-      message: `${formatNaira(anySentBucket.sentAmount)} has been moved toward your ${anySentBucket.bucketName.toLowerCase()} plans.`,
-      tone: "positive",
-    };
+  if (mostRecentSent) {
+    const bucketName = (mostRecentSent as any).budget_buckets?.name ?? "Envelope";
+    const amount = Number(mostRecentSent.planned_amount);
+    if (bucketName.toLowerCase() === "tithe") {
+      encouragement = {
+        title: "Tithe sent.",
+        message: `You followed through on your ${formatNaira(amount)} kingdom allocation. Well done.`,
+        tone: "positive",
+      };
+    } else if (bucketName.toLowerCase().includes("living")) {
+      encouragement = {
+        title: "Living Expenses allocation sent.",
+        message: `${formatNaira(amount)} has been moved toward your living expenses plan.`,
+        tone: "positive",
+      };
+    } else {
+      encouragement = {
+        title: `${bucketName} allocation sent.`,
+        message: `Your ${formatNaira(amount)} allocation has been marked as sent.`,
+        tone: "positive",
+      };
+    }
   } else if (pendingAmount > 0) {
     encouragement = {
-      title: "Your allocations are waiting.",
-      message: `${formatNaira(pendingAmount)} is still waiting to be sent across your active buckets.`,
+      title: "You have allocations waiting for action.",
+      message: `Review your current allocation obligations (${formatNaira(pendingAmount)} pending across your active envelopes).`,
       tone: "warning",
+    };
+  } else if (totalSent > 0) {
+    encouragement = {
+      title: "All allocations up to date.",
+      message: `You have disbursed ${formatNaira(totalSent)} across your designated vaults. Excellent discipline.`,
+      tone: "positive",
     };
   }
 

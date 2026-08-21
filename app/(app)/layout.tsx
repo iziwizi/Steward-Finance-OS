@@ -9,6 +9,7 @@ import { Logo } from "@/components/logo";
 import { logOut } from "@/lib/actions/auth";
 import { GlobalSearch } from "@/components/global-search";
 import { MobileSearchModal } from "@/components/mobile-search-modal";
+import { MobileProfileMenu } from "@/components/mobile-profile-menu";
 
 const DESKTOP_NAV_MAIN = [
   { href: "/dashboard", label: "Overview" },
@@ -207,17 +208,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   </span>
                 )}
               </Link>
-              <Link
-                href="/settings?tab=profile"
-                aria-label="Profile Settings"
-                className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-[11px] font-bold text-white shadow-xs ml-0.5 shrink-0"
-              >
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={userName} className="h-full w-full object-cover" />
-                ) : (
-                  <span>{userInitials}</span>
-                )}
-              </Link>
+              <MobileProfileMenu
+                avatarUrl={avatarUrl}
+                userName={userName}
+                userInitials={userInitials}
+              />
             </div>
           </div>
         </header>

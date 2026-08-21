@@ -82,8 +82,8 @@ export function AuthLayout({
         </div>
 
         {/* Footer Attribution */}
-        <div className="relative z-10 flex items-center justify-between text-[11px] text-brand-200/70 border-t border-white/10 pt-4">
-          <span>StewardOS Personal Finance OS</span>
+        <div className="relative z-10 flex items-center justify-between text-xs text-brand-100 font-medium border-t border-white/20 pt-4">
+          <span className="tracking-wide">StewardOS Personal Finance OS</span>
           <span>A Product of MUJTEKNIFY · © 2026</span>
         </div>
       </div>

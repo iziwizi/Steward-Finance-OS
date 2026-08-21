@@ -19,7 +19,7 @@ export function Logo({
           alt="StewardOS — FAITHFUL. WISE. PROSPEROUS."
           width={220}
           height={48}
-          className="h-7 sm:h-8 md:h-10 w-auto object-contain"
+          className="h-8 sm:h-9 md:h-10 w-auto object-contain"
           priority
         />
       </div>

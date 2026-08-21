@@ -6,29 +6,48 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { Badge } from "@/components/ui/badge";
 import { TargetPercentEditor } from "@/components/target-percent-editor";
 import { AllocationToggle } from "@/app/(app)/transactions/allocation-toggle";
+import { AllocationDateFilter } from "@/components/allocation-date-filter";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AllocationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ income_id?: string }>;
+  searchParams?: Promise<{ income_id?: string; date?: string; filter?: string }>;
 }) {
   const params = searchParams ? await searchParams : undefined;
   const targetIncomeId = params?.income_id;
+  const filterDateParam = params?.date;
+  const filterType = params?.filter;
+
+  let activeDateFilter: string | undefined = filterDateParam;
+  if (!activeDateFilter && filterType === "today") {
+    activeDateFilter = new Date().toISOString().slice(0, 10);
+  } else if (!activeDateFilter && filterType === "yesterday") {
+    const y = new Date();
+    y.setDate(y.getDate() - 1);
+    activeDateFilter = y.toISOString().slice(0, 10);
+  }
 
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  let incomeQuery = supabase
+    .from("income_transactions")
+    .select("id, txn_date, source, amount, description, allocations(id, bucket_id, planned_amount, status, sent_at, budget_buckets(name))")
+    .eq("user_id", user?.id)
+    .order("txn_date", { ascending: false });
+
+  if (activeDateFilter) {
+    incomeQuery = incomeQuery.eq("txn_date", activeDateFilter);
+  } else {
+    incomeQuery = incomeQuery.limit(20);
+  }
+
   const [data, { data: incomeWithAllocations }] = await Promise.all([
     getDashboardData("current_month"),
-    supabase
-      .from("income_transactions")
-      .select("id, txn_date, source, amount, description, allocations(id, bucket_id, planned_amount, status, sent_at, budget_buckets(name))")
-      .eq("user_id", user?.id)
-      .order("txn_date", { ascending: false })
-      .limit(20),
+    incomeQuery,
   ]);
 
   const totalPlanned = data.allocationSummary.totalPlanned;
@@ -227,24 +246,34 @@ export default async function AllocationsPage({
 
       {/* Individual Income Allocations & Obligations Section (Live Toggle with Transactions) */}
       <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-100 pb-3.5">
-          <div>
-            <h2 className="text-sm font-bold text-zinc-900">Recent Income Allocation Obligations</h2>
-            <p className="text-[11px] text-zinc-500">
-              Review and mark individual allocation transfers as <strong>Sent</strong> when physical funds are moved. Updates sync live with the Transactions ledger.
-            </p>
+        <div className="flex flex-col gap-2.5 border-b border-zinc-100 pb-3.5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Recent Income Allocation Obligations</h2>
+              <p className="text-[11px] text-zinc-500">
+                Review and mark individual allocation transfers as <strong>Sent</strong> when physical funds are moved. Updates sync live with the Transactions ledger.
+              </p>
+            </div>
+            <Link
+              href="/transactions"
+              className="text-xs font-semibold text-brand-600 hover:text-brand-700 shrink-0"
+            >
+              View Full Ledger →
+            </Link>
           </div>
-          <Link
-            href="/transactions"
-            className="text-xs font-semibold text-brand-600 hover:text-brand-700 shrink-0"
-          >
-            View Full Ledger →
-          </Link>
+
+          {/* Date Filter Toolbar */}
+          <AllocationDateFilter
+            currentDate={filterDateParam}
+            currentFilter={filterType}
+          />
         </div>
 
         {(!incomeWithAllocations || incomeWithAllocations.length === 0) ? (
           <div className="py-8 text-center text-xs text-zinc-400">
-            No income transactions recorded yet. Record income to generate automatic allocation obligations.
+            {activeDateFilter
+              ? `No income allocation records found for ${new Date(activeDateFilter + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}.`
+              : "No income transactions recorded yet. Record income to generate automatic allocation obligations."}
           </div>
         ) : (
           <div className="space-y-4">
