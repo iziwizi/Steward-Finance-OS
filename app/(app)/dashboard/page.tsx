@@ -228,8 +228,8 @@ export default async function DashboardPage() {
         {/* 2. Four Compact Quick Action Buttons */}
         <div className="grid grid-cols-4 gap-2 pt-1">
           {/* Action 1: Today's Decision */}
-          <a
-            href="#mobile-todays-decisions"
+          <Link
+            href="/today"
             className="group flex flex-col items-center gap-1.5 text-center"
           >
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-700 border border-brand-200/60 shadow-2xs transition-transform active:scale-95 group-hover:bg-brand-100">
@@ -238,7 +238,7 @@ export default async function DashboardPage() {
             <span className="text-[11px] font-semibold text-zinc-700 leading-tight">
               Today's Decision
             </span>
-          </a>
+          </Link>
 
           {/* Action 2: Income */}
           <Link
@@ -302,16 +302,7 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 4. Today's Decisions Check-In Section */}
-        <div id="mobile-todays-decisions">
-          <TodaysDecisions
-            existingDecision={todayDecision ?? null}
-            hasIncomeToday={hasIncomeToday}
-            hasExpensesToday={hasExpensesToday}
-            accounts={userAccounts ?? []}
-            buckets={userBuckets ?? []}
-          />
-        </div>
+        {/* Today's Decisions is accessible via the quick action → /today dedicated page */}
 
         {/* 5. Allocation Health Module */}
         <div className="rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm">

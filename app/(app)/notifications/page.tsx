@@ -119,8 +119,8 @@ export default async function NotificationsPage() {
                       <span className="text-[10px] text-zinc-400 shrink-0">{formattedTime}</span>
                     </div>
 
-                    <p className="mt-1 text-xs font-bold text-zinc-900">{n.title}</p>
-                    <p className="mt-0.5 text-xs text-zinc-600 leading-relaxed">{n.body}</p>
+                    <p className="mt-1 text-xs font-bold text-zinc-900 break-words">{n.title}</p>
+                    <p className="mt-0.5 text-xs text-zinc-600 leading-relaxed break-words">{n.body}</p>
 
                     {isUnread && (
                       <form

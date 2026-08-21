@@ -51,7 +51,7 @@ export function MobileProfileMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-56 rounded-2xl border border-zinc-200/80 bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-fast z-50">
+        <div className="absolute left-0 top-full mt-2 w-56 rounded-2xl border border-zinc-200/80 bg-white p-2 shadow-xl animate-in fade-in zoom-in-95 duration-fast z-50">
           {/* User Info Header */}
           <div className="flex items-center gap-2.5 p-2 border-b border-zinc-100 pb-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-500 text-xs font-bold text-white">

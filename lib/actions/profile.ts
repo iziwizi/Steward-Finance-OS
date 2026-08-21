@@ -4,6 +4,23 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+/**
+ * IMPORTANT: Do NOT call supabase.auth.updateUser() in any of these Server Actions.
+ *
+ * Calling auth.updateUser() inside a Server Action causes Supabase to rotate the access
+ * token. However, Server Actions cannot reliably write the new rotated token back into
+ * browser cookies — only middleware and Route Handlers can do that. The result is that
+ * the browser holds a stale/invalid session cookie and the user gets logged out on the
+ * next navigation.
+ *
+ * Source of truth:
+ *   profiles.full_name  → user display name (not auth.users metadata)
+ *   profiles.avatar_url → avatar URL (not auth.users metadata)
+ *
+ * The only place auth.updateUser is permitted is password-reset (lib/actions/password-reset.ts),
+ * where a new session is expected anyway.
+ */
+
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -24,12 +41,8 @@ export async function updateProfile(formData: FormData): Promise<{ success: bool
       return { success: false, error: "Full name is required." };
     }
 
-    // 1. Update user metadata in auth.users (keep compact!)
-    await supabase.auth.updateUser({
-      data: { full_name },
-    });
-
-    // 2. Update profiles table
+    // Update profiles table — this is the authoritative source of truth for user name.
+    // Do NOT call auth.updateUser() here — it would rotate the auth token and log the user out.
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -98,7 +111,8 @@ export async function uploadAvatar(
       return { success: false, error: "Failed to generate public URL for avatar." };
     }
 
-    // 2. Persist public URL directly into profiles table (authoritative source of truth)
+    // 2. Persist public URL into profiles table — authoritative source of truth.
+    // Do NOT call auth.updateUser() — that would rotate the session token and log the user out.
     const { error: profileError } = await supabase
       .from("profiles")
       .upsert(
@@ -118,15 +132,6 @@ export async function uploadAvatar(
       };
     }
 
-    // 3. Cleanse any legacy metadata
-    if (user.user_metadata?.avatar_url) {
-      try {
-        await supabase.auth.updateUser({ data: { avatar_url: null } });
-      } catch {
-        // ignore non-critical metadata cleanup
-      }
-    }
-
     revalidatePath("/", "layout");
     revalidatePath("/settings");
     revalidatePath("/dashboard");
@@ -141,14 +146,8 @@ export async function removeAvatar(): Promise<{ success: boolean; error?: string
   try {
     const { supabase, user } = await requireUser();
 
-    // 1. Cleanse metadata
-    if (user.user_metadata?.avatar_url) {
-      await supabase.auth.updateUser({
-        data: { avatar_url: null },
-      });
-    }
-
-    // 2. Clear from profiles table
+    // Clear avatar_url from profiles table — source of truth.
+    // Do NOT call auth.updateUser() — that would rotate the session token and log the user out.
     const { error } = await supabase
       .from("profiles")
       .update({ avatar_url: null, updated_at: new Date().toISOString() })

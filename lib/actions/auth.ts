@@ -108,25 +108,17 @@ export async function logIn(
   if (!email || !password) return { error: "Email and password are required." };
 
   const supabase = await createClient();
-  const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     console.error("[auth:logIn] failed", { status: error.status, code: error.code, message: error.message });
     return { error: friendlyLoginError(error.message) };
   }
 
-  // Self-heal: If user metadata contains a bloated legacy base64 avatar URL (>500 chars),
-  // strip it from auth.users metadata immediately so the session JWT shrinks down to <1KB
-  const rawMeta = (authData?.user?.user_metadata as any)?.avatar_url;
-  if (typeof rawMeta === "string" && (rawMeta.startsWith("data:") || rawMeta.length > 500)) {
-    try {
-      await supabase.auth.updateUser({
-        data: { avatar_url: null },
-      });
-    } catch {
-      // ignore
-    }
-  }
+  // NOTE: Do NOT call supabase.auth.updateUser() here. Any auth mutation inside a Server
+  // Action causes token rotation, but the new token cannot be written back to browser
+  // cookies from a Server Action context — resulting in the user being logged out on the
+  // next navigation. Avatar metadata is sourced from profiles.avatar_url, not auth metadata.
 
   redirect("/dashboard");
 }

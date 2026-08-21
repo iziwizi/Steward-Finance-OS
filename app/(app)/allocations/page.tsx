@@ -66,13 +66,22 @@ export default async function AllocationsPage({
         title="Allocation Center"
         fallbackHref="/dashboard"
         action={
-          <Link
-            href="/income/new"
-            className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
-          >
-            <Plus className="h-3 w-3" />
-            <span>Income</span>
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/settings?tab=allocations"
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
+            >
+              <Sliders className="h-3 w-3" />
+              <span>Rules</span>
+            </Link>
+            <Link
+              href="/income/new"
+              className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs active:scale-95 transition-all"
+            >
+              <Plus className="h-3 w-3" />
+              <span>Income</span>
+            </Link>
+          </div>
         }
       />
 
