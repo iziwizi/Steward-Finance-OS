@@ -29,6 +29,12 @@ describe("updateSession", () => {
     expect(res.status).toBe(200);
   });
 
+  it("lets unauthenticated users reach the root landing page /", async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    const res = await updateSession(new NextRequest("http://localhost:3000/"));
+    expect(res.status).toBe(200);
+  });
+
   it("redirects authenticated users away from /login to /dashboard", async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: "u1" } } });
     const res = await updateSession(new NextRequest("http://localhost:3000/login"));
@@ -42,7 +48,7 @@ describe("updateSession", () => {
     expect(res.status).toBe(200);
   });
 
-  it.each(["/auth/confirm", "/forgot-password", "/reset-password", "/offline"])(
+  it.each(["/auth/confirm", "/forgot-password", "/reset-password", "/offline", "/brand/logo.png", "/icons/icon-192.png"])(
     "lets unauthenticated users reach %s",
     async (path) => {
       mockGetUser.mockResolvedValue({ data: { user: null } });

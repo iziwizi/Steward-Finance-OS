@@ -24,7 +24,7 @@ export async function updateProfile(formData: FormData): Promise<{ success: bool
       return { success: false, error: "Full name is required." };
     }
 
-    // 1. Update user metadata in auth.users
+    // 1. Update user metadata in auth.users (keep compact!)
     await supabase.auth.updateUser({
       data: { full_name },
     });
@@ -66,41 +66,33 @@ export async function uploadAvatar(formData: FormData): Promise<{ success: boole
     }
 
     const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
-    const allowed = ["png", "jpg", "jpeg", "webp", "svg"];
+    const allowed = ["png", "jpg", "jpeg", "webp"];
     if (!allowed.includes(fileExt)) {
-      return { success: false, error: "File must be a JPG, PNG, WEBP, or SVG image." };
+      return { success: false, error: "File must be a JPG, PNG, or WEBP image." };
     }
 
-    let publicUrl = "";
+    // Upload to Supabase Storage bucket 'avatars'
+    const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(fileName, file, { upsert: true, contentType: file.type });
 
-    // 1. Try uploading to Supabase Storage bucket 'avatars'
-    try {
-      const fileName = `${user.id}/avatar-${Date.now()}.${fileExt}`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(fileName, file, { upsert: true });
-
-      if (!uploadError) {
-        const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
-        publicUrl = data.publicUrl;
-      }
-    } catch (storageErr) {
-      console.warn("Supabase Storage bucket upload note:", storageErr);
+    if (uploadError) {
+      console.warn("Supabase Storage bucket upload note:", uploadError);
+      return {
+        success: false,
+        error: "Could not upload image to storage. Please ensure the 'avatars' bucket exists in Supabase Storage.",
+      };
     }
 
-    // 2. Fallback to base64 data URL if storage bucket is not configured
+    const { data } = supabase.storage.from("avatars").getPublicUrl(fileName);
+    const publicUrl = data.publicUrl;
+
     if (!publicUrl) {
-      const buffer = await file.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString("base64");
-      publicUrl = `data:${file.type || "image/png"};base64,${base64}`;
+      return { success: false, error: "Failed to generate public URL for avatar." };
     }
 
-    // 3. Save to auth metadata (always succeeds)
-    await supabase.auth.updateUser({
-      data: { avatar_url: publicUrl },
-    });
-
-    // 4. Save avatar_url to profiles table if column exists
+    // Save public URL to profiles table
     try {
       await supabase
         .from("profiles")
@@ -122,10 +114,12 @@ export async function removeAvatar(): Promise<{ success: boolean; error?: string
   try {
     const { supabase, user } = await requireUser();
 
-    // 1. Clear from auth metadata
-    await supabase.auth.updateUser({
-      data: { avatar_url: null },
-    });
+    // 1. Cleanse any legacy avatar data from user_metadata
+    if (user.user_metadata?.avatar_url) {
+      await supabase.auth.updateUser({
+        data: { avatar_url: null },
+      });
+    }
 
     // 2. Clear from profiles table
     try {

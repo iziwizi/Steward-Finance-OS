@@ -7,9 +7,20 @@ import { InstallPrompt } from "./install-prompt";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "StewardOS — Personal Finance",
-  description: "Your personal finance operating system.",
+  title: "StewardOS — Personal Finance Operating System",
+  description: "Faithful, wise, and prosperous personal finance operating system.",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/brand/icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/brand/icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/brand/icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

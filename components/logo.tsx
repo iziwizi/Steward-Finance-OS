@@ -3,12 +3,29 @@ import Image from "next/image";
 export function Logo({
   className = "",
   size = "md",
+  variant = "compact",
   showWordmark = true,
 }: {
   className?: string;
   size?: "sm" | "md" | "lg";
+  variant?: "compact" | "full";
   showWordmark?: boolean;
 }) {
+  if (variant === "full") {
+    return (
+      <div className={`flex items-center ${className}`}>
+        <Image
+          src="/brand/logo.png"
+          alt="StewardOS — FAITHFUL. WISE. PROSPEROUS."
+          width={220}
+          height={48}
+          className="h-10 w-auto object-contain"
+          priority
+        />
+      </div>
+    );
+  }
+
   const iconSizes = {
     sm: "h-6 w-6",
     md: "h-7 w-7",
@@ -46,12 +63,13 @@ export function Logo({
 
 export function WordmarkLogo({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative h-10 w-48 ${className}`}>
+    <div className={`flex items-center ${className}`}>
       <Image
         src="/brand/logo.png"
         alt="StewardOS — FAITHFUL. WISE. PROSPEROUS."
-        fill
-        className="object-contain"
+        width={220}
+        height={48}
+        className="h-10 w-auto object-contain"
         priority
       />
     </div>

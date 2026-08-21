@@ -2,10 +2,9 @@ import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 /**
  * Defends against a profile row going missing while auth.users survives
- * (e.g. manual deletion via the Supabase dashboard) — the app has no
- * account-deletion feature of its own, and email/name is never used as an
- * ownership key, only auth.uid(). ignoreDuplicates makes this a cheap
- * ON CONFLICT DO NOTHING when the profile already exists.
+ * (e.g. manual deletion via the Supabase dashboard).
+ * Also automatically cleanses any legacy base64 avatar strings from
+ * raw_user_meta_data to prevent 494 REQUEST_HEADER_TOO_LARGE cookie bloat.
  */
 export async function ensureProfile(supabase: SupabaseClient, user: User): Promise<void> {
   const { error } = await supabase
@@ -17,5 +16,18 @@ export async function ensureProfile(supabase: SupabaseClient, user: User): Promi
 
   if (error) {
     console.error("[profile:ensureProfile] failed", { code: error.code, message: error.message });
+  }
+
+  // Self-healing: if user_metadata has a legacy oversized base64 avatar URL (>500 chars),
+  // strip it from auth.users metadata immediately to prevent cookie header overflow.
+  const legacyAvatar = (user.user_metadata as any)?.avatar_url;
+  if (typeof legacyAvatar === "string" && (legacyAvatar.startsWith("data:") || legacyAvatar.length > 500)) {
+    try {
+      await supabase.auth.updateUser({
+        data: { avatar_url: null },
+      });
+    } catch {
+      // ignore
+    }
   }
 }

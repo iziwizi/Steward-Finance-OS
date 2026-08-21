@@ -12,7 +12,6 @@ import {
   X,
   FileSpreadsheet,
   FileText,
-  Trash2,
   Plus,
 } from "lucide-react";
 import { formatNaira } from "@/lib/finance/allocation-engine";
@@ -35,6 +34,21 @@ export interface TransactionRow {
   deleteAction: () => Promise<any>;
 }
 
+const MONTHS = [
+  { value: "01", label: "January" },
+  { value: "02", label: "February" },
+  { value: "03", label: "March" },
+  { value: "04", label: "April" },
+  { value: "05", label: "May" },
+  { value: "06", label: "June" },
+  { value: "07", label: "July" },
+  { value: "08", label: "August" },
+  { value: "09", label: "September" },
+  { value: "10", label: "October" },
+  { value: "11", label: "November" },
+  { value: "12", label: "December" },
+];
+
 export function TransactionsView({
   rows,
   buckets,
@@ -44,12 +58,29 @@ export function TransactionsView({
   buckets: any[];
   accounts: any[];
 }) {
+  const currentYear = new Date().getFullYear();
+  const years = useMemo(() => {
+    const list = [];
+    for (let y = currentYear + 1; y >= currentYear - 4; y--) {
+      list.push(String(y));
+    }
+    return list;
+  }, [currentYear]);
+
   const [tab, setTab] = useState<"all" | "income" | "expenses">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedAccount, setSelectedAccount] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [datePreset, setDatePreset] = useState<"all" | "this_month" | "last_month">("all");
+
+  // Date Filter State
+  const [dateFilterMode, setDateFilterMode] = useState<"preset" | "month_year" | "custom">("preset");
+  const [datePreset, setDatePreset] = useState<"all" | "this_month" | "last_month" | "this_year">("all");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedYear, setSelectedYear] = useState(String(currentYear));
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+
   const [showExportMenu, setShowExportMenu] = useState(false);
 
   const filteredRows = useMemo(() => {
@@ -57,6 +88,7 @@ export function TransactionsView({
     const thisMonth = now.toISOString().slice(0, 7);
     const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonth = lastMonthDate.toISOString().slice(0, 7);
+    const thisYearStr = String(now.getFullYear());
 
     return rows.filter((r) => {
       // Type Filter
@@ -81,9 +113,27 @@ export function TransactionsView({
         return false;
       }
 
-      // Date Filter
-      if (datePreset === "this_month" && !r.date.startsWith(thisMonth)) return false;
-      if (datePreset === "last_month" && !r.date.startsWith(lastMonth)) return false;
+      // Date Filtering Logic
+      if (dateFilterMode === "preset") {
+        if (datePreset === "this_month" && !r.date.startsWith(thisMonth)) return false;
+        if (datePreset === "last_month" && !r.date.startsWith(lastMonth)) return false;
+        if (datePreset === "this_year" && !r.date.startsWith(thisYearStr)) return false;
+      } else if (dateFilterMode === "month_year") {
+        if (selectedYear !== "all") {
+          if (selectedMonth !== "all") {
+            const ym = `${selectedYear}-${selectedMonth}`;
+            if (!r.date.startsWith(ym)) return false;
+          } else {
+            if (!r.date.startsWith(selectedYear)) return false;
+          }
+        } else if (selectedMonth !== "all") {
+          const m = r.date.slice(5, 7);
+          if (m !== selectedMonth) return false;
+        }
+      } else if (dateFilterMode === "custom") {
+        if (customFrom && r.date < customFrom) return false;
+        if (customTo && r.date > customTo) return false;
+      }
 
       // Search Query
       if (searchQuery.trim()) {
@@ -96,7 +146,20 @@ export function TransactionsView({
 
       return true;
     });
-  }, [rows, tab, selectedCategory, selectedAccount, selectedStatus, datePreset, searchQuery]);
+  }, [
+    rows,
+    tab,
+    selectedCategory,
+    selectedAccount,
+    selectedStatus,
+    dateFilterMode,
+    datePreset,
+    selectedMonth,
+    selectedYear,
+    customFrom,
+    customTo,
+    searchQuery,
+  ]);
 
   // Group by date for Mobile View
   const mobileGroups = useMemo(() => {
@@ -134,6 +197,7 @@ export function TransactionsView({
     selectedCategory !== "all" ||
     selectedAccount !== "all" ||
     selectedStatus !== "all" ||
+    dateFilterMode !== "preset" ||
     datePreset !== "all" ||
     searchQuery.trim().length > 0;
 
@@ -142,7 +206,12 @@ export function TransactionsView({
     setSelectedCategory("all");
     setSelectedAccount("all");
     setSelectedStatus("all");
+    setDateFilterMode("preset");
     setDatePreset("all");
+    setSelectedMonth("all");
+    setSelectedYear(String(currentYear));
+    setCustomFrom("");
+    setCustomTo("");
     setSearchQuery("");
   };
 
@@ -154,6 +223,18 @@ export function TransactionsView({
     if (selectedAccount !== "all") params.set("account", selectedAccount);
     if (selectedStatus !== "all") params.set("status", selectedStatus);
     if (searchQuery.trim()) params.set("q", searchQuery.trim());
+
+    if (dateFilterMode === "custom") {
+      if (customFrom) params.set("from", customFrom);
+      if (customTo) params.set("to", customTo);
+    } else if (dateFilterMode === "month_year" && selectedYear !== "all") {
+      if (selectedMonth !== "all") {
+        params.set("from", `${selectedYear}-${selectedMonth}-01`);
+        const endDay = new Date(Number(selectedYear), Number(selectedMonth), 0).getDate();
+        params.set("to", `${selectedYear}-${selectedMonth}-${endDay}`);
+      }
+    }
+
     return `/api/export?${params.toString()}`;
   };
 
@@ -273,16 +354,82 @@ export function TransactionsView({
             <span className="text-[10px] font-bold uppercase tracking-wider">Filters:</span>
           </div>
 
-          {/* Date Preset */}
+          {/* Date Mode Selector */}
           <select
-            value={datePreset}
-            onChange={(e) => setDatePreset(e.target.value as any)}
-            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+            value={dateFilterMode}
+            onChange={(e) => setDateFilterMode(e.target.value as any)}
+            className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 focus:border-brand-500 focus:outline-none"
           >
-            <option value="all">Date: All Time</option>
-            <option value="this_month">Date: This Month</option>
-            <option value="last_month">Date: Last Month</option>
+            <option value="preset">Date: Quick Presets</option>
+            <option value="month_year">Date: Select Month & Year</option>
+            <option value="custom">Date: Custom Date Range</option>
           </select>
+
+          {/* 1. Quick Presets Mode */}
+          {dateFilterMode === "preset" && (
+            <select
+              value={datePreset}
+              onChange={(e) => setDatePreset(e.target.value as any)}
+              className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+            >
+              <option value="all">All Time</option>
+              <option value="this_month">This Month</option>
+              <option value="last_month">Last Month</option>
+              <option value="this_year">This Year ({currentYear})</option>
+            </select>
+          )}
+
+          {/* 2. Month & Year Mode */}
+          {dateFilterMode === "month_year" && (
+            <div className="flex items-center gap-1.5">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+              >
+                <option value="all">All Months</option>
+                {MONTHS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+                className="rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+              >
+                <option value="all">All Years</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* 3. Custom Date Range Mode */}
+          {dateFilterMode === "custom" && (
+            <div className="flex items-center gap-1.5">
+              <input
+                type="date"
+                value={customFrom}
+                onChange={(e) => setCustomFrom(e.target.value)}
+                placeholder="From"
+                className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+              />
+              <span className="text-zinc-400">to</span>
+              <input
+                type="date"
+                value={customTo}
+                onChange={(e) => setCustomTo(e.target.value)}
+                placeholder="To"
+                className="rounded-lg border border-zinc-200 bg-white px-2 py-0.5 text-xs text-zinc-700 focus:border-brand-500 focus:outline-none"
+              />
+            </div>
+          )}
 
           {/* Category Filter */}
           <select
