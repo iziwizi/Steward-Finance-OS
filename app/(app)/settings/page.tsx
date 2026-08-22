@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { User, Sliders, Bell, CreditCard, ShieldAlert, BookOpen, Heart, Download, LogOut } from "lucide-react";
+import { User, Sliders, Bell, CreditCard, ShieldAlert, BookOpen, Heart, Download, LogOut, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { logOut } from "@/lib/actions/auth";
 import { ProfileForm } from "./profile-form";
@@ -8,6 +8,7 @@ import { LinkedAccountsManager } from "./linked-accounts";
 import { PushSubscribeButton } from "../notifications/push-subscribe-button";
 import { SettingsInstructions } from "@/components/settings-instructions";
 import { MobilePageHeader } from "@/components/mobile-page-header";
+import { SettingsNav } from "./settings-nav";
 
 export default async function SettingsPage({
   searchParams,
@@ -50,37 +51,9 @@ export default async function SettingsPage({
 
       {/* Main 2-Column Layout matching Figma desktop-settings-page */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Sub-navigation Bar (3/12 cols) */}
+        {/* Left Sub-navigation Bar (3/12 cols) with Instant Feedback */}
         <div className="lg:col-span-3">
-          <nav className="space-y-1 rounded-xl border border-zinc-200/80 bg-white p-2 shadow-sm">
-            {[
-              { id: "profile", label: "Profile", icon: User },
-              { id: "accounts", label: "Linked Accounts", icon: CreditCard },
-              { id: "allocations", label: "Allocation Percentages", icon: Sliders },
-              { id: "instructions", label: "Instructions & Guide", icon: BookOpen },
-              { id: "notifications", label: "Notifications", icon: Bell },
-              { id: "security", label: "Security & Deletion", icon: ShieldAlert, danger: true },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = currentTab === tab.id;
-              return (
-                <Link
-                  key={tab.id}
-                  href={`/settings?tab=${tab.id}`}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-brand-50 text-brand-600 shadow-xs"
-                      : tab.danger
-                      ? "text-rose-600 hover:bg-rose-50"
-                      : "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          <SettingsNav currentTab={currentTab} />
         </div>
 
         {/* Right Content Panel (9/12 cols) */}
@@ -92,7 +65,7 @@ export default async function SettingsPage({
             </div>
           )}
 
-          {/* TAB 2: Accounts (Canonical Home for Linked Accounts) */}
+          {/* TAB 2: Account (Canonical Home for Linked Accounts) */}
           {currentTab === "accounts" && (
             <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm">
               <LinkedAccountsManager accounts={accountList} />
@@ -126,51 +99,60 @@ export default async function SettingsPage({
             </div>
           )}
 
-          {/* TAB 6: Security & Account (Password, Session Logout, Danger Zone) */}
+          {/* TAB 6: Security & Deletion (Canonical Home for Danger Zone) */}
           {currentTab === "security" && (
-            <div className="space-y-6">
-              {/* Session / Logout Section */}
-              <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-4">
-                <div className="border-b border-zinc-100 pb-3">
-                  <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                    <LogOut className="h-4 w-4 text-zinc-600" /> Account Session
-                  </h2>
-                  <p className="text-xs text-zinc-500 mt-0.5">
-                    End your active session on this device. You can log back in at any time.
-                  </p>
-                </div>
-
-                <form action={logOut}>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 hover:text-rose-600 transition-all active:scale-95"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Log Out of StewardOS</span>
-                  </button>
-                </form>
+            <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm space-y-4">
+              <div className="border-b border-rose-200/60 pb-3">
+                <h2 className="text-sm font-bold text-rose-700 flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4" /> Danger Zone: Permanent Account Deletion
+                </h2>
+                <p className="text-xs text-zinc-600 mt-1">
+                  Once you delete your account, there is no going back. All transactions, goals, allocations, and journal notes will be permanently removed.
+                </p>
               </div>
 
-              {/* Danger Zone: Account Deletion */}
-              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm space-y-4">
-                <div className="border-b border-rose-200/60 pb-3">
-                  <h2 className="text-sm font-bold text-rose-700 flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4" /> Danger Zone: Permanent Account Deletion
-                  </h2>
-                  <p className="text-xs text-zinc-600 mt-1">
-                    Once you delete your account, there is no going back. All transactions, goals, allocations, and journal notes will be permanently removed.
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  <Link
-                    href="/settings/delete-account"
-                    className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-700"
-                  >
-                    Proceed to Delete Account
-                  </Link>
-                </div>
+              <div className="pt-2">
+                <Link
+                  href="/settings/delete-account"
+                  className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-700"
+                >
+                  Proceed to Delete Account
+                </Link>
               </div>
+            </div>
+          )}
+
+          {/* TAB 7: Log Out of StewardOS (Dedicated Navigation Item) */}
+          {currentTab === "logout" && (
+            <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-5">
+              <div className="border-b border-zinc-100 pb-3">
+                <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                  <LogOut className="h-4 w-4 text-zinc-700" />
+                  <span>Log Out of StewardOS</span>
+                </h2>
+                <p className="text-xs text-zinc-500 mt-1">
+                  End your active session on this device. You can log back in at any time with your email and password.
+                </p>
+              </div>
+
+              <div className="rounded-xl bg-zinc-50/80 p-4 border border-zinc-100 space-y-2">
+                <p className="text-xs text-zinc-700 font-medium">
+                  Signed in as: <strong>{user?.email}</strong>
+                </p>
+                <p className="text-[11px] text-zinc-400">
+                  Your offline cached data and preferences remain secure on your device.
+                </p>
+              </div>
+
+              <form action={logOut} className="pt-2">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-6 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-rose-700 active:scale-95 transition-all"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Confirm Log Out</span>
+                </button>
+              </form>
             </div>
           )}
         </div>

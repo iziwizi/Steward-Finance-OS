@@ -191,6 +191,7 @@ export function calculateAvailableCash(input: {
 export type BudgetLine = {
   bucketId: string;
   bucketName: string;
+  purpose?: string | null;
   targetPercent?: number;
   allocated: number; // total planned into this bucket for the period
   sent?: number; // total marked as sent/disbursed for the period

@@ -123,6 +123,7 @@ export async function getDashboardData(
       .map((b) => ({
         bucketId: b.id,
         bucketName: b.name,
+        purpose: b.purpose || null,
         targetPercent: Number(b.target_percent || 0),
         allocated: allocatedByBucket.get(b.id) ?? 0,
         sent: sentByBucket.get(b.id) ?? 0,

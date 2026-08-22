@@ -12,7 +12,6 @@ export function BucketManager({
 }: {
   buckets: any[];
   accounts: any[];
- trick?: boolean;
 }) {
   const [feedback, setFeedback] = useState<{ id?: string; type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -100,7 +99,7 @@ export function BucketManager({
             <form onSubmit={(e) => handleUpdateBucket(e, b.id)} className="space-y-3">
               <input type="hidden" name="id" value={b.id} />
               
-              {/* Row 1: Name, Target %, Destination Account */}
+              {/* 1. Name, 2. Target %, 3. Destination Account */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
                 <div className="sm:col-span-5">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
@@ -115,7 +114,7 @@ export function BucketManager({
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div className="sm:col-span-3">
                   <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                     Target %
                   </label>
@@ -148,18 +147,12 @@ export function BucketManager({
                     ))}
                   </select>
                 </div>
-
-                <div className="sm:col-span-1 flex justify-end">
-                  <Button type="submit" variant="primary" disabled={isPending} className="w-full sm:w-auto px-3 py-1.5 text-xs">
-                    {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save"}
-                  </Button>
-                </div>
               </div>
 
-              {/* Row 2: Purpose Description */}
+              {/* 4. Purpose / Intent */}
               <div>
                 <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-                  Purpose & Intent
+                  Purpose / Intent
                 </label>
                 <input
                   type="text"
@@ -168,6 +161,13 @@ export function BucketManager({
                   placeholder="e.g. Kingdom giving, personal living expenses, financial freedom, future purchases"
                   className="tap-target mt-0.5 w-full rounded-lg border border-zinc-200 bg-zinc-50/50 px-2.5 py-1.5 text-xs text-zinc-700 placeholder-zinc-400 focus:border-brand-500 focus:bg-white focus:outline-none"
                 />
+              </div>
+
+              {/* 5. Save Button (ALWAYS the final action) */}
+              <div className="flex justify-end pt-1">
+                <Button type="submit" variant="primary" disabled={isPending} className="w-full sm:w-auto px-4 py-1.5 text-xs font-semibold">
+                  {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Save Changes"}
+                </Button>
               </div>
             </form>
 
@@ -232,7 +232,7 @@ export function BucketManager({
       <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50/50 p-4">
         <h3 className="text-xs font-bold text-zinc-900 mb-2.5">Create New Allocation Envelope</h3>
         <form onSubmit={handleCreateBucket} className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
             <div className="sm:col-span-5">
               <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Bucket Name
@@ -245,7 +245,7 @@ export function BucketManager({
                 className="tap-target mt-0.5 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs focus:border-brand-500 focus:outline-none"
               />
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-3">
               <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Target %
               </label>
@@ -260,7 +260,7 @@ export function BucketManager({
                 className="tap-target mt-0.5 w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-xs text-center focus:border-brand-500 focus:outline-none"
               />
             </div>
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-4">
               <label className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">
                 Destination Account
               </label>
@@ -276,13 +276,6 @@ export function BucketManager({
                 ))}
               </select>
             </div>
-            <div className="sm:col-span-2">
-              <input type="hidden" name="is_income_split" value="on" />
-              <Button type="submit" variant="primary" disabled={isPending} className="w-full px-4 py-1.5 text-xs">
-                {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1 h-3.5 w-3.5" />}
-                Add Bucket
-              </Button>
-            </div>
           </div>
 
           <div>
@@ -295,6 +288,14 @@ export function BucketManager({
               placeholder="e.g. For personal computer upgrade and freelance software tools"
               className="tap-target mt-0.5 w-full rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-700 placeholder-zinc-400 focus:border-brand-500 focus:outline-none"
             />
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <input type="hidden" name="is_income_split" value="on" />
+            <Button type="submit" variant="primary" disabled={isPending} className="w-full sm:w-auto px-4 py-1.5 text-xs">
+              {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="mr-1 h-3.5 w-3.5" />}
+              Add Bucket
+            </Button>
           </div>
         </form>
       </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { savePushSubscription } from "@/lib/actions/notifications";
-import { Bell, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { savePushSubscription, sendTestPushNotification } from "@/lib/actions/notifications";
+import { Bell, CheckCircle2, AlertCircle, Loader2, Send, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -17,6 +17,8 @@ export function PushSubscribeButton() {
     "idle"
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [testFeedback, setTestFeedback] = useState<string | null>(null);
+  const [isPendingTest, startTransitionTest] = useTransition();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -48,6 +50,7 @@ export function PushSubscribeButton() {
 
   async function subscribe() {
     setErrorMessage(null);
+    setTestFeedback(null);
     setStatus("loading");
 
     try {
@@ -80,7 +83,6 @@ export function PushSubscribeButton() {
       setStatus("subscribed");
     } catch (err: any) {
       console.error("Push subscription error:", err);
-      // If VAPID isn't configured in test env, browser permission is still granted
       if (Notification.permission === "granted") {
         setStatus("subscribed");
       } else {
@@ -88,6 +90,21 @@ export function PushSubscribeButton() {
         setStatus("idle");
       }
     }
+  }
+
+  function handleSendTest() {
+    setTestFeedback(null);
+    setErrorMessage(null);
+
+    startTransitionTest(async () => {
+      const res = await sendTestPushNotification();
+      if (res.success) {
+        setTestFeedback("Test notification dispatched to your active device!");
+        setTimeout(() => setTestFeedback(null), 5000);
+      } else {
+        setErrorMessage(res.error || "Failed to dispatch test notification.");
+      }
+    });
   }
 
   if (status === "unsupported") {
@@ -99,10 +116,10 @@ export function PushSubscribeButton() {
   }
 
   return (
-    <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-3">
-      <div className="flex items-center justify-between">
+    <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
             <Bell className="h-4 w-4" />
           </div>
           <div>
@@ -113,42 +130,68 @@ export function PushSubscribeButton() {
           </div>
         </div>
 
-        {status === "subscribed" ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
-            <CheckCircle2 className="h-3.5 w-3.5" />
-            Enabled
-          </span>
-        ) : status === "denied" ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700">
-            <AlertCircle className="h-3.5 w-3.5" />
-            Blocked
-          </span>
-        ) : (
-          <Button
-            type="button"
-            onClick={subscribe}
-            disabled={status === "loading"}
-            variant="primary"
-            className="px-3.5 py-1.5 text-xs"
-          >
-            {status === "loading" ? (
-              <>
-                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-                Enabling...
-              </>
-            ) : (
-              "Enable Alerts"
-            )}
-          </Button>
-        )}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {status === "subscribed" ? (
+            <>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Enabled
+              </span>
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isPendingTest}
+                onClick={handleSendTest}
+                className="px-3 py-1 text-xs"
+              >
+                {isPendingTest ? (
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="mr-1.5 h-3.5 w-3.5 text-brand-600" />
+                )}
+                <span>Send Test</span>
+              </Button>
+            </>
+          ) : status === "denied" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700">
+              <AlertCircle className="h-3.5 w-3.5" />
+              Blocked
+            </span>
+          ) : (
+            <Button
+              type="button"
+              onClick={subscribe}
+              disabled={status === "loading"}
+              variant="primary"
+              className="px-3.5 py-1.5 text-xs"
+            >
+              {status === "loading" ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Enabling...
+                </>
+              ) : (
+                "Enable Alerts"
+              )}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {testFeedback && (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 p-2.5 text-xs font-semibold text-emerald-800 border border-emerald-200 animate-in fade-in">
+          <Check className="h-4 w-4 text-emerald-600 shrink-0" />
+          <span>{testFeedback}</span>
+        </div>
+      )}
 
       {errorMessage && (
         <p className="text-xs text-rose-600 font-medium">{errorMessage}</p>
       )}
+
       {status === "denied" && (
-        <p className="text-xs text-zinc-500">
-          Notifications are blocked in your browser settings. To enable alerts, allow notifications for this site in your browser preferences.
+        <p className="text-xs text-zinc-500 leading-relaxed bg-zinc-50 p-3 rounded-lg border border-zinc-100">
+          Notifications are blocked in your browser settings. To enable device alerts, allow notifications for this domain in your browser site permissions.
         </p>
       )}
     </div>

@@ -6,6 +6,7 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { MonthDatePicker } from "@/components/month-date-picker";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 import { StewardInsightBanner } from "@/components/steward-insight-banner";
+import { MonthlyExportDropdown } from "@/components/monthly-export-dropdown";
 
 export default async function MonthlyReviewPage({
   searchParams,
@@ -42,24 +43,18 @@ export default async function MonthlyReviewPage({
 
   return (
     <div className="space-y-6 pb-12">
-      {/* App-like Mobile Back Header */}
+      {/* App-like Mobile Back Header with Export Dropdown */}
       <MobilePageHeader
         title="Monthly Review"
         fallbackHref="/dashboard"
         action={
           hasData ? (
-            <a
-              href={exportUrl("csv")}
-              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50"
-            >
-              <Download className="h-3 w-3 text-zinc-500" />
-              <span>Export</span>
-            </a>
+            <MonthlyExportDropdown from={start} to={end} compact />
           ) : undefined
         }
       />
 
-      {/* Header with Month Navigation Controls and Export */}
+      {/* Header with Month Navigation Controls and Export Dropdown */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="hidden md:block">
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">{monthDisplayName} Review</h1>
@@ -79,20 +74,7 @@ export default async function MonthlyReviewPage({
 
           {hasData && (
             <div className="hidden sm:flex items-center gap-1.5">
-              <a
-                href={exportUrl("csv")}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 transition-all"
-              >
-                <Download className="h-3.5 w-3.5 text-zinc-400" />
-                <span>Export CSV</span>
-              </a>
-              <a
-                href={exportUrl("excel")}
-                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 transition-all"
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Excel</span>
-              </a>
+              <MonthlyExportDropdown from={start} to={end} />
             </div>
           )}
         </div>

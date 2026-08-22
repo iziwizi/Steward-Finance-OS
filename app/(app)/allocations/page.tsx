@@ -5,6 +5,7 @@ import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { Badge } from "@/components/ui/badge";
 import { TargetPercentEditor } from "@/components/target-percent-editor";
+import { BucketPurposeEditor } from "@/components/bucket-purpose-editor";
 import { AllocationToggle } from "@/app/(app)/transactions/allocation-toggle";
 import { AllocationDateFilter } from "@/components/allocation-date-filter";
 import { MobilePageHeader } from "@/components/mobile-page-header";
@@ -95,26 +96,18 @@ export default async function AllocationsPage({
   return (
     <div className="space-y-6 pb-12">
       {/* App-like Mobile Back Header */}
+      {/* App-like Mobile Back Header */}
       <MobilePageHeader
         title="Allocation Center"
         fallbackHref="/dashboard"
         action={
-          <div className="flex items-center gap-1.5">
-            <Link
-              href="/settings?tab=allocations"
-              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
-            >
-              <Sliders className="h-3 w-3" />
-              <span>Rules</span>
-            </Link>
-            <Link
-              href="/income/new"
-              className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs active:scale-95 transition-all"
-            >
-              <Plus className="h-3 w-3" />
-              <span>Income</span>
-            </Link>
-          </div>
+          <Link
+            href="/settings?tab=allocations"
+            className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
+          >
+            <Sliders className="h-3 w-3" />
+            <span>Adjust Rules</span>
+          </Link>
         }
       />
 
@@ -152,9 +145,13 @@ export default async function AllocationsPage({
             <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-100">
               Monthly Income
             </span>
-            <span className="rounded-full bg-brand-400/40 px-2 py-0.5 text-[10px] font-bold text-white">
-              Base
-            </span>
+            <Link
+              href="/income/new"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-brand-700 shadow-xs hover:bg-brand-50 active:scale-95 transition-all"
+            >
+              <Plus className="h-3 w-3 text-brand-700" />
+              <span>Add Income</span>
+            </Link>
           </div>
           <div className="mt-3">
             <p className="text-2xl font-extrabold tracking-tight text-white lg:text-3xl">
@@ -235,6 +232,7 @@ export default async function AllocationsPage({
               <tr className="border-b border-zinc-100 bg-zinc-50/50 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
                 <th className="py-3 px-4">Bucket Name</th>
                 <th className="py-3 px-4">Target %</th>
+                <th className="py-3 px-4">Purpose</th>
                 <th className="py-3 px-4 text-right">Planned</th>
                 <th className="py-3 px-4 text-right">Sent Amount</th>
                 <th className="py-3 px-4 text-right">Remaining</th>
@@ -244,7 +242,7 @@ export default async function AllocationsPage({
             <tbody className="divide-y divide-zinc-100">
               {data.budgetHealth.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-xs text-zinc-400">
+                  <td colSpan={7} className="py-8 text-center text-xs text-zinc-400">
                     No active allocation buckets found. Configure your rules in Settings.
                   </td>
                 </tr>
@@ -264,6 +262,13 @@ export default async function AllocationsPage({
                           bucketId={b.bucketId}
                           bucketName={b.bucketName}
                           initialPercent={b.targetPercent ?? 0}
+                        />
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-zinc-500">
+                        <BucketPurposeEditor
+                          bucketId={b.bucketId}
+                          bucketName={b.bucketName}
+                          initialPurpose={b.purpose}
                         />
                       </td>
                       <td className="py-3.5 px-4 text-right font-medium text-zinc-700">

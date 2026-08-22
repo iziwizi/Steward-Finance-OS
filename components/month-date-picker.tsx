@@ -140,7 +140,7 @@ export function MonthDatePicker({
 
       {/* Popover Calendar / Month Selector */}
       {isOpen && (
-        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl animate-in fade-in zoom-in-95 duration-fast">
+        <div className="absolute right-0 top-full z-50 mt-1.5 w-72 max-w-[calc(100vw-32px)] rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl animate-in fade-in zoom-in-95 duration-fast">
           {/* Header with Year Switcher & Mode Toggle */}
           <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
             <button
