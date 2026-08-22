@@ -35,6 +35,35 @@ export function renderWelcomeEmail(name: string = "Valued Steward") {
   return { subject, html, text: `Welcome to StewardOS, ${name}! Open your dashboard at ${appUrl}/dashboard` };
 }
 
+export function renderPasswordResetEmail({
+  name = "Steward",
+  resetUrl,
+}: {
+  name?: string;
+  resetUrl: string;
+}) {
+  const subject = "Reset your StewardOS password";
+  const previewText = "Reset your password to access your StewardOS account.";
+  const headline = "Reset Your Password";
+
+  const contentHtml = `
+    <p>Hello <strong>${name}</strong>,</p>
+    <p>We received a request to reset the password for your StewardOS account. Click the button below to set a new password:</p>
+    <p style="font-size: 12px; color: #64748b;">This password reset link is secure and will expire in 1 hour.</p>
+  `;
+
+  const html = wrapInStewardEmailLayout({
+    previewText,
+    headline,
+    contentHtml,
+    ctaText: "Reset Password",
+    ctaUrl: resetUrl,
+    footerNote: `If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.`,
+  });
+
+  return { subject, html, text: `Reset your StewardOS password: ${resetUrl}` };
+}
+
 export function renderVerificationEmail({
   name = "Steward",
   confirmUrl,

@@ -1,16 +1,24 @@
 import { requireAdmin, getAdminUsersList } from "@/lib/actions/admin";
+import { getAllAdminSupportTickets } from "@/lib/actions/support";
 import { AdminUsersTable } from "./admin-users-table";
 import { MobilePageHeader } from "@/components/mobile-page-header";
-import { ShieldCheck, Users, CheckCircle2, UserPlus } from "lucide-react";
+import { ShieldCheck, Users, CheckCircle2, MessageSquare, AlertCircle, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function AdminDashboardPage() {
   const { user, profile } = await requireAdmin();
-  const users = await getAdminUsersList();
+  const [users, tickets] = await Promise.all([
+    getAdminUsersList(),
+    getAllAdminSupportTickets(),
+  ]);
 
   const totalUsers = users.length;
   const totalAdmins = users.filter((u: any) => u.role === "admin").length;
   const totalOnboarded = users.filter((u: any) => Boolean(u.onboarding_completed_at)).length;
+
+  const openTickets = tickets.filter((t) => t.status === "open" || t.status === "in_progress").length;
+  const waitingUserTickets = tickets.filter((t) => t.status === "waiting_for_user").length;
+  const resolvedTickets = tickets.filter((t) => t.status === "resolved" || t.status === "closed").length;
 
   return (
     <div className="space-y-6 pb-16">
@@ -28,17 +36,25 @@ export default async function AdminDashboardPage() {
             </span>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Registered accounts, platform roles, and user onboarding telemetry.
+            Registered accounts, platform roles, user onboarding telemetry, and support queue.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Link
             href="/admin/support"
-            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-2xs hover:bg-zinc-50 active:scale-95 transition-all"
           >
             <span>Support Queue</span>
-            <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] text-brand-700 font-bold">Tickets</span>
+            {openTickets > 0 ? (
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] text-amber-800 font-bold">
+                {openTickets} Active
+              </span>
+            ) : (
+              <span className="rounded-full bg-zinc-100 px-1.5 py-0.2 text-[10px] text-zinc-600 font-bold">
+                {tickets.length} Total
+              </span>
+            )}
           </Link>
           <Link
             href="/dashboard"
@@ -49,33 +65,48 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-1">
+      {/* Metric Cards Grid */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-zinc-400">
             <span className="text-[11px] font-semibold uppercase tracking-wider">Total Users</span>
             <Users className="h-4 w-4 text-brand-600" />
           </div>
           <p className="text-2xl font-extrabold text-zinc-900">{totalUsers}</p>
-          <p className="text-[11px] text-zinc-400">All registered tenant accounts</p>
+          <p className="text-[11px] text-zinc-400">{totalAdmins} admin · {totalUsers - totalAdmins} tenant accounts</p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-1">
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-zinc-400">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Onboarding Completed</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Onboarding Finished</span>
             <CheckCircle2 className="h-4 w-4 text-emerald-600" />
           </div>
           <p className="text-2xl font-extrabold text-emerald-600">{totalOnboarded}</p>
-          <p className="text-[11px] text-zinc-400">Finished initial financial setup</p>
+          <p className="text-[11px] text-zinc-400">Completed financial onboarding</p>
         </div>
 
-        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-1">
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-2xs space-y-1">
           <div className="flex items-center justify-between text-zinc-400">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Admin Operators</span>
-            <ShieldCheck className="h-4 w-4 text-purple-600" />
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Active Support Tickets</span>
+            <MessageSquare className="h-4 w-4 text-amber-600" />
           </div>
-          <p className="text-2xl font-extrabold text-purple-700">{totalAdmins}</p>
-          <p className="text-[11px] text-zinc-400">Privileged administrator profiles</p>
+          <p className="text-2xl font-extrabold text-amber-600">{openTickets}</p>
+          <p className="text-[11px] text-zinc-400">{waitingUserTickets} awaiting user · {resolvedTickets} resolved</p>
+        </div>
+
+        <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between text-zinc-400">
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Support Hub</span>
+            <Link
+              href="/admin/support"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-600 hover:text-brand-700"
+            >
+              <span>View Queue</span>
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </div>
+          <p className="text-2xl font-extrabold text-purple-700">{tickets.length}</p>
+          <p className="text-[11px] text-zinc-400">Total tickets handled</p>
         </div>
       </div>
 

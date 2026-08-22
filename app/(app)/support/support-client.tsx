@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
-import { Plus, MessageSquare, Clock, CheckCircle2, AlertCircle, Loader2, HelpCircle, ChevronRight, X } from "lucide-react";
+import { Plus, HelpCircle, ChevronRight, X, Search, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { createSupportTicket, type SupportTicket } from "@/lib/actions/support";
 import { Button } from "@/components/ui/button";
 
@@ -25,8 +25,23 @@ const STATUS_CONFIG: Record<string, { label: string; tone: string }> = {
 
 export function SupportClient({ initialTickets = [] }: { initialTickets: SupportTicket[] }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const filteredTickets = useMemo(() => {
+    return initialTickets.filter((t) => {
+      const matchesStatus = statusFilter === "all" || t.status === statusFilter;
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        t.subject.toLowerCase().includes(q) ||
+        t.category.toLowerCase().includes(q) ||
+        t.id.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [initialTickets, statusFilter, searchQuery]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -70,7 +85,7 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
 
       {feedback && (
         <div
-          className={`flex items-center gap-2 rounded-lg p-3 text-xs font-semibold ${
+          className={`flex items-center gap-2 rounded-xl p-3 text-xs font-semibold animate-in fade-in duration-fast ${
             feedback.type === "success"
               ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
               : "bg-rose-50 text-rose-800 border border-rose-200"
@@ -82,6 +97,39 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
             <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
           )}
           <span>{feedback.text}</span>
+        </div>
+      )}
+
+      {/* Filter and Search Bar */}
+      {initialTickets.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search tickets..."
+              className="w-full rounded-xl border border-zinc-200 bg-white pl-9 pr-3 py-1.5 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            {["all", "open", "in_progress", "waiting_for_user", "resolved", "closed"].map((st) => (
+              <button
+                key={st}
+                type="button"
+                onClick={() => setStatusFilter(st)}
+                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold capitalize transition-colors whitespace-nowrap ${
+                  statusFilter === st
+                    ? "bg-zinc-900 text-white shadow-2xs"
+                    : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200/70"
+                }`}
+              >
+                {st.replace(/_/g, " ")}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -105,9 +153,13 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
               </Button>
             </div>
           </div>
+        ) : filteredTickets.length === 0 ? (
+          <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center text-xs text-zinc-500">
+            No support tickets match the selected filters.
+          </div>
         ) : (
-          <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200/80 bg-white shadow-sm overflow-hidden">
-            {initialTickets.map((t) => {
+          <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200/80 bg-white shadow-2xs overflow-hidden">
+            {filteredTickets.map((t) => {
               const statusInfo = STATUS_CONFIG[t.status] || STATUS_CONFIG.open;
               const dateStr = new Date(t.created_at).toLocaleDateString("en-US", {
                 month: "short",
@@ -131,6 +183,8 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
                     <div className="flex items-center gap-2 text-[11px] text-zinc-400">
                       <span className="font-medium text-zinc-600">{t.category}</span>
                       <span>·</span>
+                      <span>Ticket #{t.id.slice(0, 8)}</span>
+                      <span>·</span>
                       <span>Created on {dateStr}</span>
                     </div>
                   </div>
@@ -144,8 +198,8 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
 
       {/* New Ticket Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-xs animate-in fade-in duration-fast">
-          <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-fast">
+          <div className="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
               <div>
                 <h3 className="text-sm font-bold text-zinc-900">Create Support Ticket</h3>
@@ -170,7 +224,7 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
                   name="subject"
                   required
                   placeholder="e.g. Question about envelope allocation rules..."
-                  className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
                   autoFocus
                 />
               </div>
@@ -182,7 +236,7 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
                 <select
                   name="category"
                   defaultValue="General Support"
-                  className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
                 >
                   {CATEGORIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -199,7 +253,7 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
                   required
                   rows={4}
                   placeholder="Please describe your issue or suggestion in detail..."
-                  className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none leading-relaxed"
+                  className="mt-1 w-full rounded-xl border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none leading-relaxed"
                 />
               </div>
 
@@ -207,7 +261,7 @@ export function SupportClient({ initialTickets = [] }: { initialTickets: Support
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-lg border border-zinc-200 px-3.5 py-1.5 font-semibold text-zinc-600 hover:bg-zinc-50"
+                  className="rounded-xl border border-zinc-200 px-3.5 py-1.5 font-semibold text-zinc-600 hover:bg-zinc-50"
                 >
                   Cancel
                 </button>

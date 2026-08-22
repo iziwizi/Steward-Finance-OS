@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   renderWelcomeEmail,
+  renderPasswordResetEmail,
   renderVerificationEmail,
   renderSupportCreatedEmail,
   renderSupportReplyEmail,
@@ -19,6 +20,15 @@ describe("Resend Email Templates & Branding Engine", () => {
     expect(email.subject).toContain("Welcome to StewardOS");
     expect(email.html).toContain("Alexander");
     expect(email.html).toContain("StewardOS Personal Finance");
+    expect(email.html).toContain("MUJTEKNIFY");
+  });
+
+  it("renders branded password reset email with secure CTA link", () => {
+    const resetUrl = "https://steward-finance-os.vercel.app/reset-password?token=xyz";
+    const email = renderPasswordResetEmail({ name: "Alex", resetUrl });
+    expect(email.subject).toBe("Reset your StewardOS password");
+    expect(email.html).toContain(resetUrl);
+    expect(email.html).not.toContain("localhost");
     expect(email.html).toContain("MUJTEKNIFY");
   });
 

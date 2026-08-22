@@ -12,25 +12,25 @@ import { MobileSearchModal } from "@/components/mobile-search-modal";
 import { MobileProfileMenu } from "@/components/mobile-profile-menu";
 import { getTimeOfDayGreeting, getUserFirstName } from "@/lib/utils/greeting";
 
-const DESKTOP_NAV_MAIN = [
+const DESKTOP_NAV_OVERVIEW = [
   { href: "/dashboard", label: "Overview" },
-  { href: "/transactions", label: "Transactions" },
-  { href: "/goals", label: "Goals" },
-  { href: "/reports", label: "Reports" },
-  { href: "/monthly-review", label: "Monthly Review" },
-];
-
-const DESKTOP_NAV_PLANNING = [
-  { href: "/allocations", label: "Allocations" },
-  { href: "/bills", label: "Bills" },
-  { href: "/subscriptions", label: "Subscriptions" },
-  { href: "/assets", label: "Assets" },
-  { href: "/wishlist", label: "Wishlist" },
 ];
 
 const DESKTOP_NAV_ACTIONS = [
   { href: "/income/new", label: "Record Income" },
   { href: "/expenses/new", label: "Record Expense" },
+];
+
+const DESKTOP_NAV_FINANCE = [
+  { href: "/transactions", label: "Transactions" },
+  { href: "/goals", label: "Goals" },
+  { href: "/reports", label: "Reports" },
+  { href: "/monthly-review", label: "Monthly Review" },
+  { href: "/allocations", label: "Allocations" },
+  { href: "/bills", label: "Bills" },
+  { href: "/subscriptions", label: "Subscriptions" },
+  { href: "/assets", label: "Assets" },
+  { href: "/wishlist", label: "Wishlist" },
 ];
 
 const DESKTOP_NAV_INSIGHTS = [
@@ -98,25 +98,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {/* Scrollable Navigation Area */}
         <div className="flex-1 overflow-y-auto min-h-0 space-y-4 py-3 pr-1">
           <nav className="space-y-1">
-            {DESKTOP_NAV_MAIN.map((item) => (
+            {DESKTOP_NAV_OVERVIEW.map((item) => (
               <SidebarLink key={item.href} {...item} />
             ))}
           </nav>
 
           <div className="space-y-1">
-            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Planning
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-brand-600">
+              Direct Actions
             </p>
-            {DESKTOP_NAV_PLANNING.map((item) => (
+            {DESKTOP_NAV_ACTIONS.map((item) => (
               <SidebarLink key={item.href} {...item} />
             ))}
           </div>
 
           <div className="space-y-1">
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              Direct Actions
+              Finance & Planning
             </p>
-            {DESKTOP_NAV_ACTIONS.map((item) => (
+            {DESKTOP_NAV_FINANCE.map((item) => (
               <SidebarLink key={item.href} {...item} />
             ))}
           </div>

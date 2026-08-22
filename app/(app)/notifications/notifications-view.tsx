@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   X,
   ChevronLeft,
-  Calendar,
+  ChevronRight,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,13 +31,19 @@ export interface NotificationItem {
 
 export function NotificationsView({
   notifications = [],
+  currentPage = 1,
+  totalPages = 1,
+  totalCount = 0,
+  unreadTotal = 0,
 }: {
   notifications: NotificationItem[];
+  currentPage?: number;
+  totalPages?: number;
+  totalCount?: number;
+  unreadTotal?: number;
 }) {
   const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  const unreadCount = notifications.filter((n) => !n.read_at).length;
 
   const getCategoryMeta = (type: string) => {
     switch (type) {
@@ -51,6 +57,8 @@ export function NotificationsView({
       case "weekly_report":
       case "monthly_report":
         return { label: "STEWARDOS • DAILY BRIEF", icon: Bell, tone: "text-brand-700 bg-brand-50" };
+      case "reminder":
+        return { label: "STEWARDOS • REMINDER", icon: Bell, tone: "text-emerald-700 bg-emerald-50" };
       case "sync":
         return { label: "SYSTEMS • DATA SYNCED", icon: RefreshCw, tone: "text-blue-700 bg-blue-50" };
       case "security":
@@ -76,6 +84,9 @@ export function NotificationsView({
     });
   };
 
+  const startItem = totalCount === 0 ? 0 : (currentPage - 1) * 10 + 1;
+  const endItem = Math.min(currentPage * 10, totalCount);
+
   return (
     <div className="space-y-6 pb-12">
       {/* App-like Mobile Back Header */}
@@ -90,19 +101,24 @@ export function NotificationsView({
       </div>
 
       {/* Main Inbox Card */}
-      <div className="rounded-xl border border-zinc-200/80 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-zinc-200/80 bg-white shadow-xs overflow-hidden">
         {/* Inbox Header Bar */}
         <div className="flex items-center justify-between border-b border-zinc-100 p-4">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-bold text-zinc-900">Inbox</h2>
-            {unreadCount > 0 && (
+            {unreadTotal > 0 && (
               <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-bold text-brand-700">
-                {unreadCount} New
+                {unreadTotal} Unread
+              </span>
+            )}
+            {totalCount > 0 && (
+              <span className="text-[11px] font-medium text-zinc-400">
+                ({totalCount} total)
               </span>
             )}
           </div>
 
-          {unreadCount > 0 && (
+          {unreadTotal > 0 && (
             <Button
               type="button"
               variant="secondary"
@@ -193,6 +209,77 @@ export function NotificationsView({
             })
           )}
         </div>
+
+        {/* Pagination Bar */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-4 py-3 text-xs">
+            <p className="text-[11px] text-zinc-500 font-medium hidden sm:block">
+              Showing <span className="font-bold text-zinc-800">{startItem}</span>–
+              <span className="font-bold text-zinc-800">{endItem}</span> of{" "}
+              <span className="font-bold text-zinc-800">{totalCount}</span>
+            </p>
+
+            <div className="flex items-center gap-1.5 mx-auto sm:mx-0">
+              {currentPage > 1 ? (
+                <Link
+                  href={`/notifications?page=${currentPage - 1}`}
+                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Prev</span>
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-lg border border-zinc-100 bg-zinc-100/60 px-2.5 py-1 text-xs font-semibold text-zinc-400 cursor-not-allowed">
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Prev</span>
+                </span>
+              )}
+
+              {/* Numbered Page Buttons */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .map((p, idx, arr) => {
+                    const prevP = arr[idx - 1];
+                    const isEllipsis = prevP && p - prevP > 1;
+
+                    return (
+                      <div key={p} className="flex items-center gap-1">
+                        {isEllipsis && <span className="px-1 text-zinc-400">…</span>}
+                        {p === currentPage ? (
+                          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white shadow-xs">
+                            {p}
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/notifications?page=${p}`}
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-200 bg-white text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
+                          >
+                            {p}
+                          </Link>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {currentPage < totalPages ? (
+                <Link
+                  href={`/notifications?page=${currentPage + 1}`}
+                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 transition-colors"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-lg border border-zinc-100 bg-zinc-100/60 px-2.5 py-1 text-xs font-semibold text-zinc-400 cursor-not-allowed">
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Full-Screen / Modal Detail View for Clicked Notification */}

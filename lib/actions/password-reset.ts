@@ -8,17 +8,20 @@ export async function requestPasswordReset(
   _prevState: AuthActionState,
   formData: FormData
 ): Promise<AuthActionState> {
-  const email = String(formData.get("email") || "");
+  const email = String(formData.get("email") || "").trim();
   if (!email) return { error: "Email is required." };
 
   const supabase = await createClient();
   const origin = await getAuthRedirectOrigin();
+  const resetRedirectUrl = `${origin}/auth/confirm?type=recovery`;
+
+  // 1. Trigger Supabase password recovery
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: origin,
+    redirectTo: resetRedirectUrl,
   });
 
   if (error) {
-    console.error("[auth:requestPasswordReset] failed", {
+    console.error("[auth:requestPasswordReset] Supabase reset error:", {
       status: error.status,
       code: error.code,
       message: error.message,
@@ -26,7 +29,36 @@ export async function requestPasswordReset(
     if (error.message.toLowerCase().includes("security purposes") || error.status === 429) {
       return { error: "Please wait a moment before requesting another email." };
     }
-    // Don't reveal whether the address has an account — same message either way.
+  }
+
+  // 2. If service role key is configured, generate a direct action link and dispatch via Resend
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    try {
+      const { createClient: createAdminClient } = await import("@supabase/supabase-js");
+      const adminClient = createAdminClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      const { data: linkData, error: linkErr } = await adminClient.auth.admin.generateLink({
+        type: "recovery",
+        email,
+        options: {
+          redirectTo: `${origin}/reset-password`,
+        },
+      });
+
+      if (!linkErr && linkData?.properties?.action_link) {
+        const { sendDigestEmail, renderPasswordResetEmail } = await import("../email/send");
+        const resetUrl = linkData.properties.action_link;
+        const emailContent = renderPasswordResetEmail({
+          name: email.split("@")[0],
+          resetUrl,
+        });
+        await sendDigestEmail(email, emailContent.subject, emailContent.html, emailContent.text);
+      }
+    } catch (adminErr) {
+      console.warn("[auth:requestPasswordReset] Admin direct email dispatch fallback error:", adminErr);
+    }
   }
 
   return {

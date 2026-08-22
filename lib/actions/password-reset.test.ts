@@ -47,7 +47,7 @@ describe("requestPasswordReset", () => {
     const result = await requestPasswordReset({ error: null }, formData({ email: "a@b.com" }));
     expect(result.success).toMatch(/a@b\.com/);
     expect(mockResetPasswordForEmail).toHaveBeenCalledWith("a@b.com", {
-      redirectTo: "http://localhost:3000",
+      redirectTo: "http://localhost:3000/auth/confirm?type=recovery",
     });
   });
 
