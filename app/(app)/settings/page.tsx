@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { User, Sliders, Bell, CreditCard, ShieldAlert, BookOpen, Heart, Download } from "lucide-react";
+import { User, Sliders, Bell, CreditCard, ShieldAlert, BookOpen, Heart, Download, LogOut } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { logOut } from "@/lib/actions/auth";
 import { ProfileForm } from "./profile-form";
 import { BucketManager } from "./bucket-manager";
 import { LinkedAccountsManager } from "./linked-accounts";
@@ -125,25 +126,50 @@ export default async function SettingsPage({
             </div>
           )}
 
-          {/* TAB 6: Security / Delete Account (Canonical Home for Danger Zone) */}
+          {/* TAB 6: Security & Account (Password, Session Logout, Danger Zone) */}
           {currentTab === "security" && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm space-y-4">
-              <div className="border-b border-rose-200/60 pb-3">
-                <h2 className="text-sm font-bold text-rose-700 flex items-center gap-2">
-                  <ShieldAlert className="h-4 w-4" /> Danger Zone: Permanent Account Deletion
-                </h2>
-                <p className="text-xs text-zinc-600 mt-1">
-                  Once you delete your account, there is no going back. All transactions, goals, allocations, and journal notes will be permanently removed.
-                </p>
+            <div className="space-y-6">
+              {/* Session / Logout Section */}
+              <div className="rounded-xl border border-zinc-200/80 bg-white p-6 shadow-sm space-y-4">
+                <div className="border-b border-zinc-100 pb-3">
+                  <h2 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
+                    <LogOut className="h-4 w-4 text-zinc-600" /> Account Session
+                  </h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    End your active session on this device. You can log back in at any time.
+                  </p>
+                </div>
+
+                <form action={logOut}>
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-4 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 hover:text-rose-600 transition-all active:scale-95"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Log Out of StewardOS</span>
+                  </button>
+                </form>
               </div>
 
-              <div className="pt-2">
-                <Link
-                  href="/settings/delete-account"
-                  className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-700"
-                >
-                  Proceed to Delete Account
-                </Link>
+              {/* Danger Zone: Account Deletion */}
+              <div className="rounded-xl border border-rose-200 bg-rose-50/40 p-6 shadow-sm space-y-4">
+                <div className="border-b border-rose-200/60 pb-3">
+                  <h2 className="text-sm font-bold text-rose-700 flex items-center gap-2">
+                    <ShieldAlert className="h-4 w-4" /> Danger Zone: Permanent Account Deletion
+                  </h2>
+                  <p className="text-xs text-zinc-600 mt-1">
+                    Once you delete your account, there is no going back. All transactions, goals, allocations, and journal notes will be permanently removed.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <Link
+                    href="/settings/delete-account"
+                    className="inline-flex items-center justify-center rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white shadow-xs transition-all hover:bg-rose-700"
+                  >
+                    Proceed to Delete Account
+                  </Link>
+                </div>
               </div>
             </div>
           )}

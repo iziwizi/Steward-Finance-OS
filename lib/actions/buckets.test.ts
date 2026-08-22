@@ -34,7 +34,7 @@ const mockRedirect = vi.fn((path: string) => {
 vi.mock("next/navigation", () => ({ redirect: mockRedirect }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
-const { createBucket, deleteBucket, moveBucket } = await import("./buckets");
+const { createBucket, updateBucket, updateBucketPurpose, deleteBucket, moveBucket } = await import("./buckets");
 
 function formData(fields: Record<string, string>) {
   const fd = new FormData();
@@ -57,6 +57,28 @@ describe("createBucket", () => {
   it("surfaces a friendly error for a duplicate bucket name", async () => {
     fromResults.budget_buckets = { error: { code: "23505", message: "duplicate key" } };
     await expect(createBucket(formData({ name: "Tithe" }))).rejects.toThrow(/already have a bucket/i);
+  });
+
+  it("persists bucket name and purpose", async () => {
+    fromResults.budget_buckets = { count: 0, error: null };
+    await expect(
+      createBucket(formData({ name: "Freedom Fund", purpose: "Financial independence opportunity fund", target_percent: "20" }))
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe("updateBucket & updateBucketPurpose", () => {
+  it("updates bucket with purpose", async () => {
+    fromResults.budget_buckets = { error: null };
+    await expect(
+      updateBucket(formData({ id: "b1", name: "Living Expenses", purpose: "Food, utilities and groceries", target_percent: "30" }))
+    ).resolves.toBeUndefined();
+  });
+
+  it("updates bucket purpose via updateBucketPurpose", async () => {
+    fromResults.budget_buckets = { error: null };
+    const res = await updateBucketPurpose("b1", "Kingdom giving and church tithe");
+    expect(res).toEqual({ success: true });
   });
 });
 

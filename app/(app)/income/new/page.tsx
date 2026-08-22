@@ -14,7 +14,7 @@ export default async function NewIncomePage() {
     .order("name");
 
   return (
-    <div className="mx-auto max-w-lg space-y-6 pb-12">
+    <div className="mx-auto max-w-2xl space-y-6 pb-12">
       {/* App-like Mobile Back Header */}
       <MobilePageHeader title="Record Income" fallbackHref="/dashboard" />
 
@@ -25,7 +25,7 @@ export default async function NewIncomePage() {
         </p>
       </div>
 
-      <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 md:p-6 shadow-xs">
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-5 md:p-7 shadow-xs">
         <IncomeForm accounts={accounts ?? []} />
       </div>
     </div>

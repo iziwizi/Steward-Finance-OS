@@ -18,7 +18,7 @@ export default async function TransactionsPage() {
   ] = await Promise.all([
     supabase
       .from("income_transactions")
-      .select("id, txn_date, source, amount, description, account_id, accounts(name)")
+      .select("id, txn_date, source, amount, description, account_id, accounts(name, institution)")
       .eq("user_id", user?.id)
       .order("txn_date", { ascending: false })
       .limit(200),
@@ -30,24 +30,38 @@ export default async function TransactionsPage() {
       .limit(200),
     supabase
       .from("allocations")
-      .select("id, planned_amount, status, budget_buckets(name), income_transaction_id")
+      .select("id, planned_amount, status, income_transaction_id, budget_buckets(id, name, purpose, default_account_id)")
       .eq("user_id", user?.id),
     supabase
       .from("budget_buckets")
-      .select("id, name")
+      .select("id, name, purpose, default_account_id")
       .eq("user_id", user?.id)
       .order("sort_order"),
     supabase
       .from("accounts")
-      .select("id, name")
+      .select("id, name, institution")
       .eq("user_id", user?.id)
       .order("name"),
   ]);
 
+  const accountMap = new Map<string, string>();
+  (accounts ?? []).forEach((a) => {
+    accountMap.set(a.id, `${a.name}${a.institution ? ` (${a.institution})` : ""}`);
+  });
+
   const allocationsByIncome = new Map<string, any[]>();
   for (const a of allocations ?? []) {
+    const bucket = a.budget_buckets as { id?: string; name?: string; purpose?: string | null; default_account_id?: string | null } | null;
+    const destAcc = bucket?.default_account_id ? accountMap.get(bucket.default_account_id) : null;
+    const item = {
+      ...a,
+      bucketName: bucket?.name ?? "General",
+      purpose: bucket?.purpose || null,
+      destinationAccount: destAcc || "Destination not configured",
+      hasDestination: Boolean(destAcc),
+    };
     const list = allocationsByIncome.get(a.income_transaction_id) ?? [];
-    list.push(a);
+    list.push(item);
     allocationsByIncome.set(a.income_transaction_id, list);
   }
 

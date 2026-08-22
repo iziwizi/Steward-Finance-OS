@@ -184,29 +184,47 @@ export default async function ReportsPage({
           </div>
         </div>
 
-        {/* Right Column: Category Spending Distribution (5/12 cols) */}
+        {/* Right Column: Category Spending & Disbursement Distribution (5/12 cols) */}
         <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm lg:col-span-5 space-y-4">
           <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
-            <h2 className="text-sm font-bold text-zinc-900">Spending by Category</h2>
+            <div>
+              <h2 className="text-sm font-bold text-zinc-900">Spending & Disbursements by Category</h2>
+              <p className="text-[10px] text-zinc-400">Includes direct expenses and confirmed envelope transfers.</p>
+            </div>
             <span className="text-xs text-zinc-400 font-semibold">{monthDisplayName}</span>
           </div>
 
-            <div className="space-y-3.5">
-              {data.budgetHealth.length === 0 ? (
-                <p className="text-xs text-zinc-400 py-4 text-center">No category expense records found.</p>
-              ) : (
-                data.budgetHealth.map((cat) => {
+          <div className="space-y-3.5">
+            {data.budgetHealth.length === 0 ? (
+              <p className="text-xs text-zinc-400 py-4 text-center">No category expense or allocation records found.</p>
+            ) : (
+              (() => {
+                const totalOutflows = data.budgetHealth.reduce(
+                  (sum, cat) => sum + Math.max(cat.spent, cat.sentAmount),
+                  0
+                );
+
+                return data.budgetHealth.map((cat) => {
+                  const effectiveOutflow = Math.max(cat.spent, cat.sentAmount);
                   const spendPercent =
-                    data.totalExpenses > 0
-                      ? Math.min(100, Math.round((cat.spent / data.totalExpenses) * 100))
+                    totalOutflows > 0
+                      ? Math.min(100, Math.round((effectiveOutflow / totalOutflows) * 100))
                       : 0;
+
                   return (
                     <div key={cat.bucketId} className="space-y-1">
                       <div className="flex justify-between text-xs">
-                        <span className="font-semibold text-zinc-900">{cat.bucketName}</span>
-                        <span className="text-zinc-500 font-bold">
-                          {formatNaira(cat.spent)}
-                          {data.totalExpenses > 0 && cat.spent > 0 && (
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-semibold text-zinc-900 truncate">{cat.bucketName}</span>
+                          {cat.spent === 0 && cat.sentAmount > 0 && (
+                            <span className="rounded bg-brand-50 px-1.5 py-0.2 text-[9px] font-bold text-brand-700">
+                              Transfer Sent
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-zinc-500 font-bold shrink-0">
+                          {formatNaira(effectiveOutflow)}
+                          {totalOutflows > 0 && effectiveOutflow > 0 && (
                             <span className="text-[10px] text-zinc-400 font-normal ml-1">
                               ({spendPercent}%)
                             </span>
@@ -215,14 +233,15 @@ export default async function ReportsPage({
                       </div>
                       <ProgressBar
                         percent={spendPercent}
-                        tone={cat.warning ? "danger" : "brand"}
+                        tone={cat.warning ? "danger" : effectiveOutflow === cat.sentAmount && cat.spent === 0 ? "income" : "brand"}
                         className="h-1.5"
                       />
                     </div>
                   );
-                })
-              )}
-            </div>
+                });
+              })()
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -247,8 +247,62 @@ export function TransactionsView({
 
   return (
     <div className="space-y-5">
-      {/* App-like Mobile Back Header */}
-      <MobilePageHeader title="Transactions" fallbackHref="/dashboard" />
+      {/* App-like Mobile Back Header with Export Action */}
+      <MobilePageHeader
+        title="Transactions"
+        fallbackHref="/dashboard"
+        action={
+          <div className="flex items-center gap-1.5">
+            <Link
+              href="/add"
+              className="inline-flex items-center gap-1 rounded-lg bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white shadow-xs"
+            >
+              <Plus className="h-3 w-3" />
+              <span>New</span>
+            </Link>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50"
+              >
+                <Download className="h-3 w-3 text-zinc-500" />
+                <span>Export</span>
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 top-full z-50 mt-1 w-44 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg animate-in fade-in zoom-in-95 duration-fast">
+                  <a
+                    href={exportUrl("csv")}
+                    onClick={() => setShowExportMenu(false)}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-zinc-500" />
+                    Export as CSV
+                  </a>
+                  <a
+                    href={exportUrl("excel")}
+                    onClick={() => setShowExportMenu(false)}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                    Export Excel (.xlsx)
+                  </a>
+                  <a
+                    href={exportUrl("pdf")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setShowExportMenu(false)}
+                    className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
+                  >
+                    <FileText className="h-3.5 w-3.5 text-rose-500" />
+                    Print / Save PDF
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        }
+      />
 
       {/* Top Header & Action Row */}
       <div className="hidden md:flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -556,24 +610,34 @@ export function TransactionsView({
                               </button>
 
                               {isExpanded && (
-                                <div className="mt-2 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3 space-y-2 animate-in fade-in zoom-in-95 duration-fast max-w-md">
+                                <div className="mt-2 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3 space-y-2 animate-in fade-in zoom-in-95 duration-fast max-w-lg">
                                   <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-zinc-400 border-b border-zinc-200/60 pb-1.5">
-                                    <span>Envelope Breakdown</span>
+                                    <span>Envelope & Destination</span>
                                     <span>Status</span>
                                   </div>
-                                  <div className="space-y-1.5">
+                                  <div className="space-y-2">
                                     {tx.allocations.map((a: any) => (
                                       <div
                                         key={a.id}
-                                        className="flex items-center justify-between text-[11px]"
+                                        className="flex items-start justify-between gap-3 text-[11px] bg-white p-2 rounded-lg border border-zinc-200/60"
                                       >
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-zinc-700">
-                                            {a.budget_buckets?.name}:
-                                          </span>
-                                          <span className="font-semibold text-zinc-900">
-                                            {formatNaira(Number(a.planned_amount))}
-                                          </span>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <span className="font-bold text-zinc-900">
+                                              {a.bucketName || a.budget_buckets?.name}
+                                            </span>
+                                            <span className="font-extrabold text-brand-600">
+                                              {formatNaira(Number(a.planned_amount))}
+                                            </span>
+                                          </div>
+                                          <p className="text-[10px] text-zinc-500 mt-0.5">
+                                            Destination: <span className="font-semibold text-zinc-700">{a.destinationAccount || "Destination not configured"}</span>
+                                          </p>
+                                          {a.purpose && (
+                                            <p className="text-[10px] text-zinc-400 italic mt-0.5">
+                                              &ldquo;{a.purpose}&rdquo;
+                                            </p>
+                                          )}
                                         </div>
                                         <AllocationToggle id={a.id} status={a.status} />
                                       </div>
@@ -705,16 +769,24 @@ export function TransactionsView({
                               {tx.allocations.map((a: any) => (
                                 <div
                                   key={a.id}
-                                  className="flex items-center justify-between text-[10px]"
+                                  className="flex flex-col gap-1.5 bg-white p-2 rounded-md border border-zinc-200/60 text-[10px]"
                                 >
-                                  <span className="font-medium text-zinc-700">
-                                    {a.budget_buckets?.name}
-                                  </span>
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-zinc-900">
-                                      {formatNaira(Number(a.planned_amount))}
-                                    </span>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="font-bold text-zinc-900">
+                                        {a.bucketName || a.budget_buckets?.name}
+                                      </span>
+                                      <span className="font-extrabold text-brand-600">
+                                        {formatNaira(Number(a.planned_amount))}
+                                      </span>
+                                    </div>
                                     <AllocationToggle id={a.id} status={a.status} />
+                                  </div>
+                                  <div className="text-[10px] text-zinc-500">
+                                    Destination: <span className="font-semibold text-zinc-700">{a.destinationAccount || "Destination not configured"}</span>
+                                    {a.purpose && (
+                                      <p className="text-zinc-400 italic mt-0.5">&ldquo;{a.purpose}&rdquo;</p>
+                                    )}
                                   </div>
                                 </div>
                               ))}

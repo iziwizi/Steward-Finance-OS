@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Sliders, Plus, CheckCircle2, Clock, AlertCircle, ArrowDownLeft, Sparkles, Check } from "lucide-react";
+import { Sliders, Plus, CheckCircle2, Clock, AlertCircle, ArrowDownLeft, Sparkles, Check, ChevronLeft, ChevronRight, Landmark, Info } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -10,15 +10,18 @@ import { AllocationDateFilter } from "@/components/allocation-date-filter";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 import { createClient } from "@/lib/supabase/server";
 
+const PAGE_SIZE = 5;
+
 export default async function AllocationsPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ income_id?: string; date?: string; filter?: string }>;
+  searchParams?: Promise<{ income_id?: string; date?: string; filter?: string; page?: string }>;
 }) {
   const params = searchParams ? await searchParams : undefined;
   const targetIncomeId = params?.income_id;
   const filterDateParam = params?.date;
   const filterType = params?.filter;
+  const currentPage = Math.max(1, parseInt(params?.page || "1", 10) || 1);
 
   let activeDateFilter: string | undefined = filterDateParam;
   if (!activeDateFilter && filterType === "today") {
@@ -34,22 +37,42 @@ export default async function AllocationsPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Fetch accounts to resolve destination accounts
+  const { data: accountsData } = await supabase
+    .from("accounts")
+    .select("id, name, institution")
+    .eq("user_id", user?.id);
+
+  const accountMap = new Map<string, { name: string; institution: string | null }>();
+  (accountsData ?? []).forEach((acc) => {
+    accountMap.set(acc.id, { name: acc.name, institution: acc.institution });
+  });
+
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   let incomeQuery = supabase
     .from("income_transactions")
-    .select("id, txn_date, source, amount, description, allocations(id, bucket_id, planned_amount, status, sent_at, budget_buckets(name))")
+    .select(
+      "id, txn_date, source, amount, description, allocations(id, bucket_id, planned_amount, status, sent_at, budget_buckets(id, name, purpose, default_account_id))",
+      { count: "exact" }
+    )
     .eq("user_id", user?.id)
     .order("txn_date", { ascending: false });
 
   if (activeDateFilter) {
     incomeQuery = incomeQuery.eq("txn_date", activeDateFilter);
-  } else {
-    incomeQuery = incomeQuery.limit(20);
   }
 
-  const [data, { data: incomeWithAllocations }] = await Promise.all([
+  incomeQuery = incomeQuery.range(from, to);
+
+  const [data, { data: incomeWithAllocations, count: totalIncomeCount }] = await Promise.all([
     getDashboardData("current_month"),
     incomeQuery,
   ]);
+
+  const totalCount = totalIncomeCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const totalPlanned = data.allocationSummary.totalPlanned;
   const totalSent = data.allocationSummary.totalSent;
@@ -58,6 +81,16 @@ export default async function AllocationsPage({
 
   const percentAllocated =
     data.totalIncome > 0 ? Math.round((totalSent / data.totalIncome) * 100) : 0;
+
+  // Build pagination query helper
+  const getPaginationUrl = (page: number) => {
+    const p = new URLSearchParams();
+    if (filterType) p.set("filter", filterType);
+    if (filterDateParam) p.set("date", filterDateParam);
+    if (page > 1) p.set("page", String(page));
+    const str = p.toString();
+    return `/allocations${str ? `?${str}` : ""}`;
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -269,14 +302,14 @@ export default async function AllocationsPage({
         </div>
       </div>
 
-      {/* Individual Income Allocations & Obligations Section (Live Toggle with Transactions) */}
+      {/* Individual Income Allocations & Obligations Section */}
       <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-4">
         <div className="flex flex-col gap-2.5 border-b border-zinc-100 pb-3.5">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-sm font-bold text-zinc-900">Recent Income Allocation Obligations</h2>
               <p className="text-[11px] text-zinc-500">
-                Review and mark individual allocation transfers as <strong>Sent</strong> when physical funds are moved. Updates sync live with the Transactions ledger.
+                Review and mark individual allocation transfers as <strong>Sent</strong> when physical funds are moved into destination accounts.
               </p>
             </div>
             <Link
@@ -295,7 +328,7 @@ export default async function AllocationsPage({
         </div>
 
         {(!incomeWithAllocations || incomeWithAllocations.length === 0) ? (
-          <div className="py-8 text-center text-xs text-zinc-400">
+          <div className="py-12 text-center text-xs text-zinc-400">
             {activeDateFilter
               ? `No income allocation records found for ${new Date(activeDateFilter + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" })}.`
               : "No income transactions recorded yet. Record income to generate automatic allocation obligations."}
@@ -303,12 +336,24 @@ export default async function AllocationsPage({
         ) : (
           <div className="space-y-4">
             {incomeWithAllocations.map((inc: any) => {
-              const allocationsList = (inc.allocations ?? []).map((a: any) => ({
-                id: a.id,
-                bucketName: a.budget_buckets?.name ?? "General",
-                plannedAmount: Number(a.planned_amount),
-                status: a.status as "pending" | "sent",
-              }));
+              const allocationsList = (inc.allocations ?? []).map((a: any) => {
+                const bucketObj = a.budget_buckets;
+                const defaultAccId = bucketObj?.default_account_id;
+                const accInfo = defaultAccId ? accountMap.get(defaultAccId) : null;
+                const destinationLabel = accInfo
+                  ? `${accInfo.name}${accInfo.institution ? ` (${accInfo.institution})` : ""}`
+                  : "Destination not configured";
+
+                return {
+                  id: a.id,
+                  bucketName: bucketObj?.name ?? "General",
+                  purpose: bucketObj?.purpose || null,
+                  destination: destinationLabel,
+                  hasDestination: Boolean(accInfo),
+                  plannedAmount: Number(a.planned_amount),
+                  status: a.status as "pending" | "sent",
+                };
+              });
 
               const totalPlannedForInc = allocationsList.reduce((s: number, a: any) => s + a.plannedAmount, 0);
               const totalSentForInc = allocationsList
@@ -363,20 +408,38 @@ export default async function AllocationsPage({
                     </div>
                   </div>
 
-                  {/* Envelope Breakdown Rows */}
+                  {/* Envelope Breakdown Rows with Destination Account & Purpose */}
                   <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                     {allocationsList.map((a: any) => (
                       <div
                         key={a.id}
-                        className="flex items-center justify-between rounded-lg border border-zinc-200/70 bg-white p-2.5 text-xs shadow-2xs"
+                        className="flex flex-col justify-between rounded-lg border border-zinc-200/70 bg-white p-3 text-xs shadow-2xs space-y-2"
                       >
-                        <div>
-                          <p className="font-semibold text-zinc-900 text-xs">{a.bucketName}</p>
-                          <p className="text-[11px] font-bold text-brand-600">
-                            {formatNaira(a.plannedAmount)}
-                          </p>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-bold text-zinc-900 text-xs truncate">{a.bucketName}</p>
+                            <p className="text-[11px] font-extrabold text-brand-600 mt-0.5">
+                              {formatNaira(a.plannedAmount)}
+                            </p>
+                          </div>
+                          <AllocationToggle id={a.id} status={a.status} />
                         </div>
-                        <AllocationToggle id={a.id} status={a.status} />
+
+                        {/* Destination Account & Purpose Info */}
+                        <div className="border-t border-zinc-100 pt-2 space-y-1">
+                          <div className="flex items-center gap-1 text-[10px] text-zinc-500">
+                            <Landmark className="h-3 w-3 text-zinc-400 shrink-0" />
+                            <span className={`truncate ${a.hasDestination ? "font-semibold text-zinc-700" : "text-zinc-400 italic"}`}>
+                              {a.destination}
+                            </span>
+                          </div>
+
+                          {a.purpose && (
+                            <p className="text-[10px] text-zinc-400 line-clamp-1 italic">
+                              &ldquo;{a.purpose}&rdquo;
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -385,8 +448,48 @@ export default async function AllocationsPage({
             })}
           </div>
         )}
+
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-zinc-100 pt-4 text-xs">
+            <span className="text-zinc-500">
+              Showing Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({totalCount} total record{totalCount === 1 ? "" : "s"})
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              {currentPage > 1 ? (
+                <Link
+                  href={getPaginationUrl(currentPage - 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-semibold text-zinc-700 hover:bg-zinc-50 shadow-2xs"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Previous</span>
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-1.5 font-semibold text-zinc-300 cursor-not-allowed">
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Previous</span>
+                </span>
+              )}
+
+              {currentPage < totalPages ? (
+                <Link
+                  href={getPaginationUrl(currentPage + 1)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 font-semibold text-zinc-700 hover:bg-zinc-50 shadow-2xs"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-1.5 font-semibold text-zinc-300 cursor-not-allowed">
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

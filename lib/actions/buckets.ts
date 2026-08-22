@@ -16,6 +16,7 @@ async function requireUser() {
 export async function createBucket(formData: FormData) {
   const { supabase, user } = await requireUser();
   const name = String(formData.get("name") || "").trim();
+  const purpose = String(formData.get("purpose") || "").trim() || null;
   const target_percent = Number(formData.get("target_percent") || 0);
   const is_income_split = formData.get("is_income_split") === "on";
   const default_account_id = String(formData.get("default_account_id") || "") || null;
@@ -30,6 +31,7 @@ export async function createBucket(formData: FormData) {
   const { error } = await supabase.from("budget_buckets").insert({
     user_id: user.id,
     name,
+    purpose,
     target_percent,
     is_income_split,
     default_account_id,
@@ -42,12 +44,15 @@ export async function createBucket(formData: FormData) {
   }
 
   revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
 }
 
 export async function updateBucket(formData: FormData) {
   const { supabase, user } = await requireUser();
   const id = String(formData.get("id") || "");
   const name = String(formData.get("name") || "").trim();
+  const purpose = String(formData.get("purpose") || "").trim() || null;
   const target_percent = Number(formData.get("target_percent") || 0);
   const default_account_id = String(formData.get("default_account_id") || "") || null;
 
@@ -55,7 +60,7 @@ export async function updateBucket(formData: FormData) {
 
   const { error } = await supabase
     .from("budget_buckets")
-    .update({ name, target_percent, default_account_id })
+    .update({ name, purpose, target_percent, default_account_id, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) {
@@ -65,6 +70,28 @@ export async function updateBucket(formData: FormData) {
   }
 
   revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
+}
+
+export async function updateBucketPurpose(bucketId: string, purpose: string) {
+  const { supabase, user } = await requireUser();
+  const cleanPurpose = purpose.trim() || null;
+
+  const { error } = await supabase
+    .from("budget_buckets")
+    .update({ purpose: cleanPurpose, updated_at: new Date().toISOString() })
+    .eq("id", bucketId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
+  return { success: true };
 }
 
 export async function toggleBucketActive(formData: FormData) {
@@ -74,12 +101,14 @@ export async function toggleBucketActive(formData: FormData) {
 
   const { error } = await supabase
     .from("budget_buckets")
-    .update({ is_active })
+    .update({ is_active, updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id);
   if (error) throw new Error(error.message);
 
   revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
 }
 
 export async function moveBucket(formData: FormData) {
@@ -106,6 +135,8 @@ export async function moveBucket(formData: FormData) {
   ]);
 
   revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
 }
 
 export async function deleteBucket(formData: FormData) {
@@ -114,9 +145,6 @@ export async function deleteBucket(formData: FormData) {
 
   const { error } = await supabase.from("budget_buckets").delete().eq("id", id).eq("user_id", user.id);
   if (error) {
-    // allocations.bucket_id references budget_buckets(id) on delete restrict —
-    // a bucket with allocation history can't be hard-deleted. Disabling it
-    // (is_active = false) is the safe alternative and keeps history intact.
     if (error.code === "23503") {
       throw new Error(
         "This bucket has allocation history and can't be deleted — disable it instead to keep it out of new income splits."
@@ -126,6 +154,8 @@ export async function deleteBucket(formData: FormData) {
   }
 
   revalidatePath("/settings");
+  revalidatePath("/allocations");
+  revalidatePath("/dashboard");
 }
 
 export async function updateBucketTargetPercent(bucketId: string, targetPercent: number) {
@@ -134,7 +164,7 @@ export async function updateBucketTargetPercent(bucketId: string, targetPercent:
 
   const { error } = await supabase
     .from("budget_buckets")
-    .update({ target_percent: validPercent })
+    .update({ target_percent: validPercent, updated_at: new Date().toISOString() })
     .eq("id", bucketId)
     .eq("user_id", user.id);
 

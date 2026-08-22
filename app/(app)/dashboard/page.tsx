@@ -19,6 +19,8 @@ import {
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { TodaysDecisions } from "@/components/todays-decisions";
 import { FirstTimeWelcomeModal } from "@/components/first-time-welcome-modal";
+import { getRealOperationalInsights } from "@/lib/data/insights";
+import { StewardInsightBanner } from "@/components/steward-insight-banner";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -38,6 +40,7 @@ export default async function DashboardPage() {
     data,
     { data: latestSentAllocations },
     { data: latestPendingAllocations },
+    operationalInsights,
   ] = await Promise.all([
     supabase.from("profiles").select("*").eq("id", user?.id).maybeSingle(),
     supabase
@@ -85,6 +88,7 @@ export default async function DashboardPage() {
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(5),
+    getRealOperationalInsights(user?.id || ""),
   ]);
 
   const firstName = getUserFirstName(profile?.full_name, user?.email);
@@ -236,7 +240,7 @@ export default async function DashboardPage() {
               <CalendarCheck className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-semibold text-zinc-700 leading-tight">
-              Today's Decision
+              Today&apos;s<br />Decision
             </span>
           </Link>
 
@@ -249,7 +253,7 @@ export default async function DashboardPage() {
               <ArrowDownLeft className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-semibold text-zinc-700 leading-tight">
-              Income
+              Record<br />Income
             </span>
           </Link>
 
@@ -262,7 +266,7 @@ export default async function DashboardPage() {
               <ArrowUpRight className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-semibold text-zinc-700 leading-tight">
-              Expense
+              Record<br />Expense
             </span>
           </Link>
 
@@ -275,7 +279,7 @@ export default async function DashboardPage() {
               <Sliders className="h-5 w-5" />
             </div>
             <span className="text-[11px] font-semibold text-zinc-700 leading-tight">
-              Allocate
+              Allocate<br />Funds
             </span>
           </Link>
         </div>
@@ -789,15 +793,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Full-Width Bottom Insight Notification Banner */}
-      <div className="flex items-center gap-3 rounded-xl border border-brand-200/80 bg-brand-50/70 p-4 shadow-xs">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-          <Zap className="h-4 w-4" />
-        </div>
-        <p className="text-xs font-medium text-brand-950">
-          Steward Insight: Your financial workspace is active. Record daily transactions and confirm envelopes to maintain high stewardship health.
-        </p>
-      </div>
+      {/* Full-Width Dynamic Steward Insight Banner */}
+      <StewardInsightBanner insight={operationalInsights?.[0] || null} />
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Zap, Calendar, ArrowUpRight, ArrowDownLeft, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Zap, Calendar, ArrowUpRight, ArrowDownLeft, CheckCircle2, Download, FileText, FileSpreadsheet } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { MonthDatePicker } from "@/components/month-date-picker";
 import { MobilePageHeader } from "@/components/mobile-page-header";
+import { StewardInsightBanner } from "@/components/steward-insight-banner";
 
 export default async function MonthlyReviewPage({
   searchParams,
@@ -37,12 +38,28 @@ export default async function MonthlyReviewPage({
 
   const hasData = data.totalIncome > 0 || data.totalExpenses > 0;
 
+  const exportUrl = (format: string) => `/api/export?format=${format}&from=${start}&to=${end}`;
+
   return (
     <div className="space-y-6 pb-12">
       {/* App-like Mobile Back Header */}
-      <MobilePageHeader title="Monthly Review" fallbackHref="/dashboard" />
+      <MobilePageHeader
+        title="Monthly Review"
+        fallbackHref="/dashboard"
+        action={
+          hasData ? (
+            <a
+              href={exportUrl("csv")}
+              className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-1 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50"
+            >
+              <Download className="h-3 w-3 text-zinc-500" />
+              <span>Export</span>
+            </a>
+          ) : undefined
+        }
+      />
 
-      {/* Header with Month Navigation Controls */}
+      {/* Header with Month Navigation Controls and Export */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="hidden md:block">
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">{monthDisplayName} Review</h1>
@@ -51,19 +68,40 @@ export default async function MonthlyReviewPage({
           </p>
         </div>
 
-        {/* Month Switcher Controls */}
-        <MonthDatePicker
-          currentMonth={selectedMonth}
-          baseUrl="/monthly-review"
-          prevMonthKey={prevMonthKey}
-          nextMonthKey={nextMonthKey}
-        />
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Month Switcher Controls */}
+          <MonthDatePicker
+            currentMonth={selectedMonth}
+            baseUrl="/monthly-review"
+            prevMonthKey={prevMonthKey}
+            nextMonthKey={nextMonthKey}
+          />
+
+          {hasData && (
+            <div className="hidden sm:flex items-center gap-1.5">
+              <a
+                href={exportUrl("csv")}
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 transition-all"
+              >
+                <Download className="h-3.5 w-3.5 text-zinc-400" />
+                <span>Export CSV</span>
+              </a>
+              <a
+                href={exportUrl("excel")}
+                className="inline-flex items-center gap-1 rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 shadow-xs hover:bg-zinc-50 transition-all"
+              >
+                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                <span>Excel</span>
+              </a>
+            </div>
+          )}
+        </div>
       </div>
 
       {!hasData ? (
         <div className="rounded-xl border border-dashed border-zinc-200 bg-white p-12 text-center text-xs text-zinc-400">
           <Calendar className="mx-auto h-8 w-8 text-zinc-300 mb-2" />
-          <p className="font-semibold text-zinc-700">No financial records found for {monthDisplayName}</p>
+          <p className="font-semibold text-zinc-700 text-sm">No financial records found for {monthDisplayName}</p>
           <p className="mt-1">Record transactions or switch to another month to inspect the automated review.</p>
           <div className="mt-4">
             <Link
@@ -144,7 +182,7 @@ export default async function MonthlyReviewPage({
 
             {/* Right Column: Allocation Health, Goals, Obligations (5/12 cols) */}
             <div className="space-y-4 lg:col-span-5">
-              {/* Allocation Health Card */}
+              {/* Allocation Health Card (All Envelopes dynamically rendered) */}
               <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-sm space-y-3.5">
                 <div className="flex items-center justify-between border-b border-zinc-100 pb-2.5">
                   <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-400">
@@ -155,14 +193,14 @@ export default async function MonthlyReviewPage({
                   </span>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                   {data.budgetHealth.length === 0 ? (
                     <p className="text-xs text-zinc-400 py-2">No active budget envelopes configured.</p>
                   ) : (
-                    data.budgetHealth.slice(0, 4).map((b) => (
+                    data.budgetHealth.map((b) => (
                       <div key={b.bucketId} className="space-y-1">
                         <div className="flex justify-between text-xs font-medium">
-                          <span className="text-zinc-900">{b.bucketName}</span>
+                          <span className="text-zinc-900 font-semibold">{b.bucketName}</span>
                           <span className="text-zinc-500 font-semibold">
                             <span className="font-bold text-zinc-900">{formatNaira(b.sentAmount)}</span>
                             <span className="text-zinc-400"> / {formatNaira(b.allocated)}</span>
@@ -194,7 +232,7 @@ export default async function MonthlyReviewPage({
                   {data.goals.length === 0 ? (
                     <p className="text-xs text-zinc-400 py-2">No active financial goals recorded.</p>
                   ) : (
-                    data.goals.slice(0, 2).map((g) => {
+                    data.goals.slice(0, 3).map((g) => {
                       const { progressPercent } = calculateGoalProgress(
                         Number(g.target_amount),
                         Number(g.current_amount)
@@ -215,15 +253,16 @@ export default async function MonthlyReviewPage({
             </div>
           </div>
 
-          {/* Bottom Full-Width Insight Banner */}
-          <div className="flex items-center gap-3.5 rounded-xl border border-brand-200/80 bg-brand-50/70 p-4 shadow-xs">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-              <Zap className="h-4 w-4" />
-            </div>
-            <p className="text-xs font-medium text-brand-950 leading-relaxed">
-              Steward Insight: {data.netCashFlow >= 0 ? "You achieved a positive net reserve in " + monthDisplayName + ". Keep allocating surpluses to emergency vaults and productive investment pools." : "Take time to review discretionary expenses and adjust envelope percentages in Settings."}
-            </p>
-          </div>
+          {/* Bottom Full-Width Dynamic Insight Banner */}
+          <StewardInsightBanner
+            insight={{
+              title: data.netCashFlow >= 0 ? `Net Surplus Achieved in ${monthDisplayName}` : `Deficit Margin in ${monthDisplayName}`,
+              desc: data.netCashFlow >= 0
+                ? `You achieved a positive net reserve of ${formatNaira(data.netCashFlow)} in ${monthDisplayName}. Keep allocating surpluses to emergency vaults and productive investment pools.`
+                : `Total disbursements exceeded received income by ${formatNaira(Math.abs(data.netCashFlow))}. Take time to review discretionary expenses and adjust envelope percentages in Settings.`,
+              tag: data.netCashFlow >= 0 ? "+ Positive Margin" : "Review Required",
+            }}
+          />
         </>
       )}
     </div>
