@@ -28,9 +28,15 @@ const DESKTOP_NAV_PLANNING = [
   { href: "/wishlist", label: "Wishlist" },
 ];
 
+const DESKTOP_NAV_ACTIONS = [
+  { href: "/income/new", label: "Record Income" },
+  { href: "/expenses/new", label: "Record Expense" },
+];
+
 const DESKTOP_NAV_INSIGHTS = [
   { href: "/celebrations", label: "Insights & Celebrations" },
   { href: "/journal", label: "Financial Journal" },
+  { href: "/support", label: "Help & Support" },
 ];
 
 const MOBILE_NAV = [
@@ -102,6 +108,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               Planning
             </p>
             {DESKTOP_NAV_PLANNING.map((item) => (
+              <SidebarLink key={item.href} {...item} />
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
+              Direct Actions
+            </p>
+            {DESKTOP_NAV_ACTIONS.map((item) => (
               <SidebarLink key={item.href} {...item} />
             ))}
           </div>

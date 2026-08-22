@@ -95,7 +95,10 @@ export default async function TransactionsPage() {
       category: e.budget_buckets?.name ?? "General",
       categoryId: e.bucket_id || undefined,
       account: "Pocket Wallet",
-      status: (e.receipt_status === "verified" ? "Cleared" : "Pending") as "Cleared" | "Pending",
+      // Schema: receipt_status in ('paid','unpaid','na')
+      // 'paid' = user confirmed payment/sent — display as Cleared
+      // 'unpaid' or 'na' = not yet settled — display as Pending
+      status: (e.receipt_status === "paid" ? "Cleared" : "Pending") as "Cleared" | "Pending",
       amount: Number(e.amount),
       allocations: [],
       deleteAction: deleteExpense.bind(null, e.id),

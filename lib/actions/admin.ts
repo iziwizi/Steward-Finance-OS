@@ -11,7 +11,7 @@ export async function requireAdmin() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/admin-login");
   }
 
   const { data: profile } = await supabase
@@ -21,7 +21,7 @@ export async function requireAdmin() {
     .maybeSingle();
 
   if (profile?.role !== "admin") {
-    redirect("/dashboard");
+    redirect("/admin-login");
   }
 
   return { supabase, user, profile };

@@ -498,33 +498,84 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 7. INSTALLABLE PWA */}
-      <section className="border-t border-zinc-200/80 bg-zinc-50/60 px-4 sm:px-6 py-20">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-zinc-200 bg-white p-8 sm:p-12 shadow-sm">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4 max-w-md">
+      {/* 7. INSTALLABLE PWA & MOBILE PRODUCT SHOWCASE */}
+      <section className="border-t border-zinc-200/80 bg-zinc-50/60 px-4 sm:px-6 py-20 overflow-hidden">
+        <div className="mx-auto max-w-6xl rounded-3xl border border-zinc-200 bg-white p-8 sm:p-12 shadow-sm">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+            {/* Left Description Column */}
+            <div className="space-y-6 lg:col-span-7">
               <div className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-[11px] font-bold text-brand-700">
                 <Smartphone className="h-3.5 w-3.5" />
-                <span>PWA Ready</span>
+                <span>PWA Ready & Mobile-First</span>
               </div>
-              <h2 className="text-2xl font-extrabold text-zinc-900 sm:text-3xl">
+              <h2 className="text-2xl font-extrabold text-zinc-900 sm:text-4xl leading-tight">
                 Works on Desktop, Tablet & Mobile. Zero App Store Friction.
               </h2>
-              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed">
-                StewardOS is engineered as an installable Progressive Web App. Install it to your home screen or desktop dock with offline cache support and instant startup speed.
+              <p className="text-xs sm:text-sm text-zinc-600 leading-relaxed max-w-xl">
+                StewardOS is engineered as an installable Progressive Web App with offline cache support, instant startup, and real-time push notifications. Add it to your iPhone or Android home screen or your desktop dock in one tap.
               </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1.5">
+                  <div className="flex items-center gap-2 text-brand-600">
+                    <Laptop className="h-4 w-4" />
+                    <p className="text-xs font-bold text-zinc-900">Desktop Experience</p>
+                  </div>
+                  <p className="text-[11px] text-zinc-500">
+                    Full 2-column transaction logs, envelope allocation matrices, and audit tools on Chrome, Edge & Safari.
+                  </p>
+                </div>
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 space-y-1.5">
+                  <div className="flex items-center gap-2 text-brand-600">
+                    <Smartphone className="h-4 w-4" />
+                    <p className="text-xs font-bold text-zinc-900">Mobile Home Screen</p>
+                  </div>
+                  <p className="text-[11px] text-zinc-500">
+                    Instant 30-second logging, Today&apos;s Decision, and quick-action bottom nav for everyday stewardship.
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex flex-wrap items-center gap-4">
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-600 active:scale-95"
+                >
+                  <span>Install StewardOS Free</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+                <span className="text-[11px] font-semibold text-zinc-400">
+                  No downloads or updates required
+                </span>
+              </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center space-y-1 flex-1 sm:w-40">
-                <Laptop className="h-6 w-6 mx-auto text-brand-600" />
-                <p className="text-xs font-bold text-zinc-900">Desktop Dock</p>
-                <p className="text-[10px] text-zinc-400">Chrome / Edge / Safari</p>
-              </div>
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-center space-y-1 flex-1 sm:w-40">
-                <Smartphone className="h-6 w-6 mx-auto text-brand-600" />
-                <p className="text-xs font-bold text-zinc-900">Mobile Home Screen</p>
-                <p className="text-[10px] text-zinc-400">iOS & Android</p>
+            {/* Right Phone Mockup Column */}
+            <div className="lg:col-span-5 flex justify-center items-center">
+              <div className="relative mx-auto w-full max-w-[280px] sm:max-w-[300px]">
+                {/* Subtle Ambient Glow Behind Phone */}
+                <div className="absolute -inset-4 rounded-[3rem] bg-gradient-to-tr from-brand-500/20 to-emerald-300/10 blur-xl pointer-events-none" />
+
+                {/* Smartphone Outer Hardware Shell */}
+                <div className="relative rounded-[2.8rem] border-[8px] border-zinc-900 bg-zinc-900 shadow-2xl shadow-zinc-900/30 overflow-hidden ring-1 ring-white/20">
+                  {/* Speaker Ear Notch / Dynamic Island */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 h-4 w-24 rounded-full bg-zinc-950 flex items-center justify-center">
+                    <div className="h-2 w-2 rounded-full bg-zinc-900 mr-2" />
+                    <div className="h-1.5 w-8 rounded-full bg-zinc-900/80" />
+                  </div>
+
+                  {/* Real Mobile App Screenshot */}
+                  <div className="relative overflow-hidden rounded-[2.2rem] bg-white pt-3">
+                    <Image
+                      src="/images/mobile-screenshot.jpg"
+                      alt="StewardOS Mobile Application Dashboard"
+                      width={390}
+                      height={844}
+                      className="w-full h-auto object-cover block"
+                      priority={false}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

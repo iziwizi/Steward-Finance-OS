@@ -45,14 +45,14 @@ beforeEach(() => {
 });
 
 describe("requireAdmin", () => {
-  it("redirects non-logged-in user to /login", async () => {
+  it("redirects non-logged-in user to /admin-login", async () => {
     mockGetUser.mockResolvedValueOnce({ data: { user: null } });
-    await expect(requireAdmin()).rejects.toThrow(/NEXT_REDIRECT:\/login/);
+    await expect(requireAdmin()).rejects.toThrow(/NEXT_REDIRECT:\/admin-login/);
   });
 
-  it("redirects non-admin user to /dashboard", async () => {
+  it("redirects non-admin user to /admin-login", async () => {
     fromResults.profiles = { data: { role: "user", email: "normal@user.com" }, error: null };
-    await expect(requireAdmin()).rejects.toThrow(/NEXT_REDIRECT:\/dashboard/);
+    await expect(requireAdmin()).rejects.toThrow(/NEXT_REDIRECT:\/admin-login/);
   });
 
   it("allows admin user to proceed", async () => {
