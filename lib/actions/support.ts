@@ -354,20 +354,51 @@ export async function adminUpdateTicketStatus(
 
   // Notify ticket owner about status change
   if (ticket && ticket.user_id !== user.id) {
-    const statusLabels: Record<string, string> = {
-      open: "Open",
-      in_progress: "In Progress",
-      waiting_for_user: "Awaiting Your Reply",
-      resolved: "Resolved",
-      closed: "Closed",
-    };
+    let bodyText = `Your support ticket "${ticket.subject}" status was updated to ${status}.`;
+    if (status === "waiting_for_user") {
+      bodyText = `Your support ticket status was updated to Waiting for User.`;
+    } else if (status === "resolved") {
+      bodyText = `Your support ticket has been marked as resolved.`;
+    } else if (status === "in_progress") {
+      bodyText = `Your support ticket is now In Progress.`;
+    } else if (status === "closed") {
+      bodyText = `Your support ticket has been closed.`;
+    }
+
     await supabase.from("in_app_notifications").insert({
       user_id: ticket.user_id,
       type: "system",
       title: "Support Ticket Status Updated",
-      body: `Your ticket "${ticket.subject}" is now: ${statusLabels[status] || status}`,
+      body: bodyText,
       link: `/support/${ticketId}`,
     });
+
+    // Best-effort push notification
+    try {
+      const { data: subs } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth_key")
+        .eq("user_id", ticket.user_id);
+
+      if (subs && subs.length > 0) {
+        const { sendPushToSubscription } = await import("../push/send");
+        for (const s of subs) {
+          const res = await sendPushToSubscription(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
+            {
+              title: "Ticket Status Updated",
+              body: bodyText,
+              link: `/support/${ticketId}`,
+            }
+          ).catch(() => null);
+          if (res?.expired) {
+            await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not dispatch push notification for status update:", e);
+    }
   }
 
   revalidatePath(`/admin/support`);
