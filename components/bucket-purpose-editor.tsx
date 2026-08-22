@@ -48,30 +48,30 @@ export function BucketPurposeEditor({
   };
 
   return (
-    <div className="relative inline-flex items-center max-w-[200px]" ref={popoverRef}>
+    <div className="relative inline-block w-full max-w-[240px]" ref={popoverRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="group inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100 hover:text-brand-700 transition-colors text-left"
+        className="group inline-flex items-start gap-1.5 rounded-md px-1.5 py-0.5 text-xs text-zinc-600 hover:bg-zinc-100 hover:text-brand-700 transition-colors text-left w-full break-words"
         title="Edit allocation purpose"
       >
         {initialPurpose ? (
-          <span className="truncate italic text-zinc-600 group-hover:text-zinc-900">
+          <span className="italic text-zinc-600 group-hover:text-zinc-900 break-words leading-snug flex-1">
             &ldquo;{initialPurpose}&rdquo;
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-medium group-hover:text-brand-600">
+          <span className="inline-flex items-center gap-1 text-[11px] text-zinc-400 font-medium group-hover:text-brand-600 shrink-0">
             <Plus className="h-2.5 w-2.5" />
             <span>Set purpose</span>
           </span>
         )}
-        <Pencil className="h-3 w-3 shrink-0 text-zinc-400 opacity-60 group-hover:opacity-100 group-hover:text-brand-600 transition-all" />
+        <Pencil className="h-3 w-3 shrink-0 text-zinc-400 opacity-60 group-hover:opacity-100 group-hover:text-brand-600 transition-all mt-0.5" />
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-50 mt-1 w-64 rounded-xl border border-zinc-200 bg-white p-3 shadow-xl animate-in fade-in zoom-in-95 duration-fast">
+        <div className="absolute left-0 top-full z-50 mt-1 w-72 max-w-[calc(100vw-32px)] rounded-xl border border-zinc-200 bg-white p-3 shadow-xl animate-in fade-in zoom-in-95 duration-fast">
           <div className="flex items-center justify-between border-b border-zinc-100 pb-1.5 mb-2">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate max-w-[160px]">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate max-w-[180px]">
               {bucketName} Purpose
             </span>
             <button
@@ -86,12 +86,12 @@ export function BucketPurposeEditor({
           <form onSubmit={handleSave} className="space-y-2.5">
             <div>
               <label className="text-[10px] font-medium text-zinc-500">Envelope Purpose & Intent</label>
-              <input
-                type="text"
+              <textarea
+                rows={2}
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
                 placeholder="e.g. Kingdom giving, emergency cushion, living expenses"
-                className="mt-0.5 w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none"
+                className="mt-0.5 w-full rounded-lg border border-zinc-200 bg-white p-2 text-xs text-zinc-900 focus:border-brand-500 focus:outline-none resize-none leading-relaxed"
                 autoFocus
               />
             </div>

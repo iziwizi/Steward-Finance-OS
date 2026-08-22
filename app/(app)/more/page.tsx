@@ -12,6 +12,7 @@ import {
   ChevronRight,
   PieChart,
   CalendarCheck2,
+  LifeBuoy,
 } from "lucide-react";
 
 const ITEMS = [
@@ -24,6 +25,7 @@ const ITEMS = [
   { href: "/assets", label: "Assets", icon: Gem, desc: "Track property & high value assets" },
   { href: "/wishlist", label: "Wish List", icon: Heart, desc: "Future purchases & savings list" },
   { href: "/journal", label: "Financial Journal", icon: BookOpen, desc: "Strategic reflections & stewardship" },
+  { href: "/support", label: "Help & Support", icon: LifeBuoy, desc: "Contact engineering team & ticket queue" },
   { href: "/settings", label: "Settings", icon: Settings, desc: "Profile, buckets & linked accounts" },
 ];
 

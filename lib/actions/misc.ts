@@ -108,7 +108,7 @@ export async function createJournalEntry(formData: FormData) {
   const improve_next_month = String(formData.get("improve_next_month") || "");
   const grateful_for = String(formData.get("grateful_for") || "");
 
-  const { error } = await supabase.from("financial_journal_entries").insert({
+  const { data, error } = await supabase.from("financial_journal_entries").insert({
     user_id: user.id,
     entry_date,
     did_well,
@@ -116,11 +116,46 @@ export async function createJournalEntry(formData: FormData) {
     surprises,
     improve_next_month,
     grateful_for,
-  });
+  }).select().single();
+
   if (error) throw new Error(error.message);
 
   revalidatePath("/journal");
-  redirect("/journal");
+  return { success: true, entry: data };
+}
+
+export async function updateJournalEntry(formData: FormData) {
+  const { supabase, user } = await requireUser();
+  const id = String(formData.get("id") || "");
+  if (!id) throw new Error("Entry ID is required");
+
+  const entry_date = String(formData.get("entry_date") || new Date().toISOString().slice(0, 10));
+  const did_well = String(formData.get("did_well") || "");
+  const mistakes = String(formData.get("mistakes") || "");
+  const surprises = String(formData.get("surprises") || "");
+  const improve_next_month = String(formData.get("improve_next_month") || "");
+  const grateful_for = String(formData.get("grateful_for") || "");
+
+  const { data, error } = await supabase
+    .from("financial_journal_entries")
+    .update({
+      entry_date,
+      did_well,
+      mistakes,
+      surprises,
+      improve_next_month,
+      grateful_for,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/journal");
+  return { success: true, entry: data };
 }
 
 export async function deleteJournalEntry(id: string) {
@@ -133,6 +168,7 @@ export async function deleteJournalEntry(id: string) {
   if (error) throw new Error(error.message);
 
   revalidatePath("/journal");
+  return { success: true };
 }
 
 export async function updateNotificationPrefs(formData: FormData) {

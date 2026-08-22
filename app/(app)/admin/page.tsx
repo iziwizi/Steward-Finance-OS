@@ -2,6 +2,7 @@ import { requireAdmin, getAdminUsersList } from "@/lib/actions/admin";
 import { AdminUsersTable } from "./admin-users-table";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 import { ShieldCheck, Users, CheckCircle2, UserPlus } from "lucide-react";
+import Link from "next/link";
 
 export default async function AdminDashboardPage() {
   const { user, profile } = await requireAdmin();
@@ -30,6 +31,14 @@ export default async function AdminDashboardPage() {
             Registered accounts, platform roles, and user onboarding telemetry.
           </p>
         </div>
+
+        <Link
+          href="/admin/support"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
+        >
+          <span>Support Queue</span>
+          <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] text-brand-700">Tickets</span>
+        </Link>
       </div>
 
       {/* Metric Cards */}

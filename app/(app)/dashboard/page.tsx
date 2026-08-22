@@ -210,7 +210,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="mt-5 flex items-center justify-between border-t border-white/15 pt-3.5">
-            <div>
+            <div className="flex-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-brand-200">
                 INCOME
               </span>
@@ -218,7 +218,8 @@ export default async function DashboardPage() {
                 {formatNaira(data.totalIncome)}
               </p>
             </div>
-            <div className="text-right">
+            <div className="h-7 w-px bg-white/20 mx-4" />
+            <div className="flex-1 text-right">
               <span className="text-[10px] font-bold uppercase tracking-wider text-rose-200">
                 EXPENSES
               </span>

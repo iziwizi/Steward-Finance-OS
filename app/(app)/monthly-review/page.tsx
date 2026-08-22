@@ -1,12 +1,11 @@
 import Link from "next/link";
-import { Zap, Calendar, ArrowUpRight, ArrowDownLeft, CheckCircle2, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Zap, Calendar, ArrowUpRight, ArrowDownLeft, CheckCircle2 } from "lucide-react";
 import { getDashboardData } from "@/lib/data/dashboard";
 import { formatNaira, calculateGoalProgress } from "@/lib/finance/allocation-engine";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { MonthDatePicker } from "@/components/month-date-picker";
 import { MobilePageHeader } from "@/components/mobile-page-header";
 import { StewardInsightBanner } from "@/components/steward-insight-banner";
-import { MonthlyExportDropdown } from "@/components/monthly-export-dropdown";
 
 export default async function MonthlyReviewPage({
   searchParams,
@@ -39,22 +38,15 @@ export default async function MonthlyReviewPage({
 
   const hasData = data.totalIncome > 0 || data.totalExpenses > 0;
 
-  const exportUrl = (format: string) => `/api/export?format=${format}&from=${start}&to=${end}`;
-
   return (
     <div className="space-y-6 pb-12">
-      {/* App-like Mobile Back Header with Export Dropdown */}
+      {/* App-like Mobile Back Header */}
       <MobilePageHeader
         title="Monthly Review"
         fallbackHref="/dashboard"
-        action={
-          hasData ? (
-            <MonthlyExportDropdown from={start} to={end} compact />
-          ) : undefined
-        }
       />
 
-      {/* Header with Month Navigation Controls and Export Dropdown */}
+      {/* Header with Month Navigation Controls */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="hidden md:block">
           <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">{monthDisplayName} Review</h1>
@@ -71,12 +63,6 @@ export default async function MonthlyReviewPage({
             prevMonthKey={prevMonthKey}
             nextMonthKey={nextMonthKey}
           />
-
-          {hasData && (
-            <div className="hidden sm:flex items-center gap-1.5">
-              <MonthlyExportDropdown from={start} to={end} />
-            </div>
-          )}
         </div>
       </div>
 

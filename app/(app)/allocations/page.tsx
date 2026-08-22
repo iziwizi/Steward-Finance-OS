@@ -147,7 +147,7 @@ export default async function AllocationsPage({
             </span>
             <Link
               href="/income/new"
-              className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-brand-700 shadow-xs hover:bg-brand-50 active:scale-95 transition-all"
+              className="md:hidden inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-bold text-brand-700 shadow-xs hover:bg-brand-50 active:scale-95 transition-all"
             >
               <Plus className="h-3 w-3 text-brand-700" />
               <span>Add Income</span>
@@ -230,13 +230,13 @@ export default async function AllocationsPage({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-zinc-100 bg-zinc-50/50 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                <th className="py-3 px-4">Bucket Name</th>
-                <th className="py-3 px-4">Target %</th>
-                <th className="py-3 px-4">Purpose</th>
-                <th className="py-3 px-4 text-right">Planned</th>
-                <th className="py-3 px-4 text-right">Sent Amount</th>
-                <th className="py-3 px-4 text-right">Remaining</th>
-                <th className="py-3 px-4">Funding Progress</th>
+                <th className="py-3 px-4 whitespace-nowrap">Bucket Name</th>
+                <th className="py-3 px-4 whitespace-nowrap">Target %</th>
+                <th className="py-3 px-4 min-w-[150px] max-w-[260px]">Purpose</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Planned</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Sent Amount</th>
+                <th className="py-3 px-4 text-right whitespace-nowrap">Remaining</th>
+                <th className="py-3 px-4 whitespace-nowrap">Funding Progress</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
@@ -256,28 +256,28 @@ export default async function AllocationsPage({
 
                   return (
                     <tr key={b.bucketId} className="transition-colors hover:bg-zinc-50/70">
-                      <td className="py-3.5 px-4 font-semibold text-zinc-900">{b.bucketName}</td>
-                      <td className="py-3.5 px-4 font-medium text-zinc-500">
+                      <td className="py-3.5 px-4 font-semibold text-zinc-900 whitespace-nowrap">{b.bucketName}</td>
+                      <td className="py-3.5 px-4 font-medium text-zinc-500 whitespace-nowrap">
                         <TargetPercentEditor
                           bucketId={b.bucketId}
                           bucketName={b.bucketName}
                           initialPercent={b.targetPercent ?? 0}
                         />
                       </td>
-                      <td className="py-3.5 px-4 font-medium text-zinc-500">
+                      <td className="py-3.5 px-4 font-medium text-zinc-500 min-w-[150px] max-w-[260px] break-words overflow-wrap-anywhere">
                         <BucketPurposeEditor
                           bucketId={b.bucketId}
                           bucketName={b.bucketName}
                           initialPurpose={b.purpose}
                         />
                       </td>
-                      <td className="py-3.5 px-4 text-right font-medium text-zinc-700">
+                      <td className="py-3.5 px-4 text-right font-medium text-zinc-700 whitespace-nowrap">
                         {formatNaira(targetPlanned)}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-brand-600">
+                      <td className="py-3.5 px-4 text-right font-bold text-brand-600 whitespace-nowrap">
                         {formatNaira(sent)}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-medium text-zinc-500">
+                      <td className="py-3.5 px-4 text-right font-medium text-zinc-500 whitespace-nowrap">
                         {remaining > 0 ? formatNaira(remaining) : "₦0.00"}
                       </td>
                       <td className="py-3.5 px-4">

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { savePushSubscription, sendTestPushNotification } from "@/lib/actions/notifications";
-import { Bell, CheckCircle2, AlertCircle, Loader2, Send, Check } from "lucide-react";
+import { Bell, CheckCircle2, AlertCircle, Loader2, Send, Check, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -23,7 +23,7 @@ export function PushSubscribeButton() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if (!("serviceWorker" in navigator) || !("Notification" in window)) {
+    if (!("serviceWorker" in navigator) || !("Notification" in window) || !("PushManager" in window)) {
       setStatus("unsupported");
       return;
     }
@@ -33,19 +33,46 @@ export function PushSubscribeButton() {
       return;
     }
 
-    if (Notification.permission === "granted") {
-      setStatus("subscribed");
-      return;
-    }
-
-    navigator.serviceWorker.register("/sw.js").catch(() => {});
-    if ("PushManager" in window) {
-      navigator.serviceWorker.ready.then((reg) =>
-        reg.pushManager.getSubscription().then((sub) => {
-          if (sub) setStatus("subscribed");
-        })
-      );
-    }
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => {
+        return navigator.serviceWorker.ready;
+      })
+      .then((reg) => {
+        return reg.pushManager.getSubscription();
+      })
+      .then(async (sub) => {
+        if (sub) {
+          // Sync existing subscription with server database
+          const json = sub.toJSON();
+          if (json.endpoint && json.keys?.p256dh && json.keys?.auth) {
+            await savePushSubscription({
+              endpoint: json.endpoint,
+              keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+            });
+          }
+          setStatus("subscribed");
+        } else if (Notification.permission === "granted") {
+          // Permission granted but no active PushManager subscription yet — auto create
+          const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+          if (publicKey) {
+            const reg = await navigator.serviceWorker.ready;
+            const newSub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicKey),
+            });
+            const json = newSub.toJSON();
+            await savePushSubscription({
+              endpoint: json.endpoint!,
+              keys: { p256dh: json.keys!.p256dh, auth: json.keys!.auth },
+            });
+            setStatus("subscribed");
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Push subscription check notice:", err);
+      });
   }, []);
 
   async function subscribe() {
@@ -54,7 +81,7 @@ export function PushSubscribeButton() {
     setStatus("loading");
 
     try {
-      if (!("Notification" in window)) {
+      if (!("Notification" in window) || !("serviceWorker" in navigator)) {
         setStatus("unsupported");
         return;
       }
@@ -67,28 +94,37 @@ export function PushSubscribeButton() {
       }
 
       const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (publicKey && "serviceWorker" in navigator && "PushManager" in window) {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(publicKey),
-        });
-        const json = sub.toJSON();
-        await savePushSubscription({
-          endpoint: json.endpoint!,
-          keys: { p256dh: json.keys!.p256dh, auth: json.keys!.auth },
-        });
+      if (!publicKey) {
+        setErrorMessage("NEXT_PUBLIC_VAPID_PUBLIC_KEY is not configured in Vercel/environment.");
+        setStatus("idle");
+        return;
+      }
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      const json = sub.toJSON();
+      const saveRes = await savePushSubscription({
+        endpoint: json.endpoint!,
+        keys: { p256dh: json.keys!.p256dh, auth: json.keys!.auth },
+      });
+
+      if (saveRes?.error) {
+        setErrorMessage(`Subscription failed to persist: ${saveRes.error}`);
+        setStatus("idle");
+        return;
       }
 
       setStatus("subscribed");
+      setTestFeedback("Push subscription registered successfully!");
+      setTimeout(() => setTestFeedback(null), 4000);
     } catch (err: any) {
       console.error("Push subscription error:", err);
-      if (Notification.permission === "granted") {
-        setStatus("subscribed");
-      } else {
-        setErrorMessage(err.message || "Could not register push notifications.");
-        setStatus("idle");
-      }
+      setErrorMessage(err.message || "Could not register push notifications.");
+      setStatus("idle");
     }
   }
 
@@ -99,8 +135,8 @@ export function PushSubscribeButton() {
     startTransitionTest(async () => {
       const res = await sendTestPushNotification();
       if (res.success) {
-        setTestFeedback("Test notification dispatched to your active device!");
-        setTimeout(() => setTestFeedback(null), 5000);
+        setTestFeedback(`Test push dispatched to ${res.count ?? 1} active device(s)! Check your device notification tray.`);
+        setTimeout(() => setTestFeedback(null), 6000);
       } else {
         setErrorMessage(res.error || "Failed to dispatch test notification.");
       }
@@ -145,11 +181,16 @@ export function PushSubscribeButton() {
                 className="px-3 py-1 text-xs"
               >
                 {isPendingTest ? (
-                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  <>
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                    Sending...
+                  </>
                 ) : (
-                  <Send className="mr-1.5 h-3.5 w-3.5 text-brand-600" />
+                  <>
+                    <Send className="mr-1.5 h-3.5 w-3.5 text-brand-600" />
+                    <span>Send Test</span>
+                  </>
                 )}
-                <span>Send Test</span>
               </Button>
             </>
           ) : status === "denied" ? (
@@ -186,7 +227,17 @@ export function PushSubscribeButton() {
       )}
 
       {errorMessage && (
-        <p className="text-xs text-rose-600 font-medium">{errorMessage}</p>
+        <div className="flex items-start gap-2 rounded-lg bg-rose-50 p-2.5 text-xs font-semibold text-rose-800 border border-rose-200 animate-in fade-in">
+          <AlertCircle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p>{errorMessage}</p>
+            {errorMessage.includes("VAPID") && (
+              <p className="text-[10px] text-rose-600/80 font-normal mt-0.5">
+                Make sure NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY are added to your environment.
+              </p>
+            )}
+          </div>
+        </div>
       )}
 
       {status === "denied" && (
