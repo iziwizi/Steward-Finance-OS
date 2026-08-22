@@ -12,22 +12,28 @@ export default async function OnboardingAllocationsPage() {
 
   const { data: buckets } = await supabase
     .from("budget_buckets")
-    .select("id, name, target_percent")
+    .select("id, name, purpose, target_percent")
     .eq("user_id", user.id)
     .eq("is_income_split", true)
     .order("sort_order");
 
   return (
-    <main className="min-h-dvh bg-paper px-6 py-8">
-      <div className="mx-auto w-full max-w-sm">
+    <main className="min-h-dvh bg-paper px-4 py-8 sm:px-6 md:py-12">
+      <div className="mx-auto w-full max-w-xl md:max-w-2xl">
         <ProgressHeader step={3} back="/onboarding/structure" />
-        <h1 className="mt-8 text-display-md text-zinc-900">Set your allocations</h1>
-        <p className="mt-2 text-sm text-zinc-500">
-          Customize how your incoming income is distributed. These are starter defaults — rename,
-          add, or remove buckets any time from Settings.
-        </p>
 
-        <AllocationsForm buckets={buckets ?? []} />
+        <div className="mt-8 rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-10 shadow-sm">
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-zinc-900 tracking-tight">
+              Define Your Allocation Envelopes
+            </h1>
+            <p className="text-xs sm:text-sm text-zinc-500 leading-relaxed">
+              Create your own custom budget envelopes or load a neutral starter framework. Whenever income is recorded, StewardOS will split it according to these target percentages.
+            </p>
+          </div>
+
+          <AllocationsForm buckets={buckets ?? []} />
+        </div>
       </div>
     </main>
   );

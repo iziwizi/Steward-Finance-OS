@@ -145,7 +145,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-xs font-bold text-zinc-900">{userName}</p>
-                  <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
+                  {profile?.role === "admin" ? (
+                    <Link
+                      href="/admin"
+                      className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 hover:text-purple-700 transition-colors"
+                    >
+                      <span>Super Admin</span>
+                      <ExternalLink className="h-2.5 w-2.5" />
+                    </Link>
+                  ) : (
+                    <p className="text-[10px] font-medium text-zinc-400">Personal Account</p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-0.5 shrink-0">

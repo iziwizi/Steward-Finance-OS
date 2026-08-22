@@ -21,6 +21,9 @@ import {
   List,
   Landmark,
   Heart,
+  ArrowDownLeft,
+  ArrowUpRight,
+  LifeBuoy,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -39,6 +42,9 @@ const ICONS: Record<string, LucideIcon> = {
   "/insights": Sparkles,
   "/celebrations": Sparkles,
   "/journal": BookOpen,
+  "/income/new": ArrowDownLeft,
+  "/expenses/new": ArrowUpRight,
+  "/support": LifeBuoy,
   "/add": Plus,
   "/more": MoreHorizontal,
 };

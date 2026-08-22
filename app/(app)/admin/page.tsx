@@ -18,13 +18,13 @@ export default async function AdminDashboardPage() {
       <MobilePageHeader title="Super Admin Console" fallbackHref="/dashboard" />
 
       {/* Desktop Header */}
-      <div className="hidden md:flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      <div className="hidden md:flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-200/80 pb-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold text-zinc-900 md:text-2xl">Super Admin Console</h1>
             <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 px-2.5 py-0.5 text-[10px] font-bold text-purple-800">
               <ShieldCheck className="h-3 w-3" />
-              Super Admin Access
+              Platform Administrator
             </span>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
@@ -32,13 +32,21 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
 
-        <Link
-          href="/admin/support"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
-        >
-          <span>Support Queue</span>
-          <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] text-brand-700">Tickets</span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/support"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-bold text-zinc-700 shadow-xs hover:bg-zinc-50 active:scale-95 transition-all"
+          >
+            <span>Support Queue</span>
+            <span className="rounded-full bg-brand-50 px-1.5 py-0.2 text-[10px] text-brand-700 font-bold">Tickets</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-600 hover:bg-zinc-50 transition-all"
+          >
+            <span>Return to App</span>
+          </Link>
+        </div>
       </div>
 
       {/* Metric Cards */}

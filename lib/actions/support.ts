@@ -69,20 +69,23 @@ export async function createSupportTicket(formData: FormData) {
     console.error("Support message error:", msgErr);
   }
 
-  // 3. Optional Admin Email Alert (safe best-effort)
-  const adminEmail = process.env.SUPPORT_ADMIN_EMAIL || process.env.GMAIL_USER;
-  if (adminEmail && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    try {
-      const { sendDigestEmail } = await import("@/lib/email/send");
-      await sendDigestEmail(
-        adminEmail,
-        `[Support Ticket #${ticket.id.slice(0, 8)}] ${subject}`,
-        `<p>New support ticket submitted by <strong>${user.email}</strong></p><p><strong>Category:</strong> ${category}</p><p><strong>Message:</strong></p><blockquote>${message}</blockquote><p><a href="${process.env.NEXT_PUBLIC_APP_URL || ""}/admin/support">View in Admin Console</a></p>`,
-        `New support ticket by ${user.email}:\nCategory: ${category}\nMessage: ${message}`
-      );
-    } catch (e) {
-      console.warn("Could not dispatch admin support email:", e);
-    }
+  // 3. Admin Email Alert
+  const adminEmail = process.env.SUPPORT_ADMIN_EMAIL || process.env.EMAIL_FROM_ADDRESS || "mujteknify@gmail.com";
+  try {
+    const { sendDigestEmail, renderSupportCreatedEmail } = await import("../email/send");
+    const { getAppBaseUrl } = await import("../email/resend");
+    const adminUrl = `${getAppBaseUrl()}/admin/support`;
+    const emailData = renderSupportCreatedEmail({
+      ticketId: ticket.id,
+      userEmail: user.email || "User",
+      subject,
+      category,
+      message,
+      adminUrl,
+    });
+    await sendDigestEmail(adminEmail, emailData.subject, emailData.html, emailData.text);
+  } catch (e) {
+    console.warn("Could not dispatch admin support email:", e);
   }
 
   revalidatePath("/support");
@@ -207,7 +210,7 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
     .update({ updated_at: new Date().toISOString(), status: nextStatus })
     .eq("id", ticketId);
 
-  // If admin replied, send in-app notification to the ticket owner
+  // If admin replied, send in-app notification and email to the ticket owner
   if (isAdmin && ticket.user_id !== user.id) {
     await supabase.from("in_app_notifications").insert({
       user_id: ticket.user_id,
@@ -216,6 +219,31 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
       body: `Support team replied to: "${ticket.subject}"`,
       link: `/support/${ticketId}`,
     });
+
+    // Best-effort email to ticket owner
+    try {
+      const { data: ticketOwner } = await supabase
+        .from("profiles")
+        .select("email, notification_email")
+        .eq("id", ticket.user_id)
+        .maybeSingle();
+
+      const userEmail = ticketOwner?.notification_email || ticketOwner?.email;
+      if (userEmail) {
+        const { sendDigestEmail, renderSupportReplyEmail } = await import("../email/send");
+        const { getAppBaseUrl } = await import("../email/resend");
+        const ticketUrl = `${getAppBaseUrl()}/support/${ticketId}`;
+        const emailData = renderSupportReplyEmail({
+          ticketId,
+          ticketSubject: ticket.subject,
+          replyMessage: message,
+          ticketUrl,
+        });
+        await sendDigestEmail(userEmail, emailData.subject, emailData.html, emailData.text);
+      }
+    } catch (e) {
+      console.warn("Could not dispatch customer reply email:", e);
+    }
   }
 
   revalidatePath(`/support/${ticketId}`);
