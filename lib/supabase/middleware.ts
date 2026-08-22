@@ -14,6 +14,8 @@ const PUBLIC_PREFIXES = [
   "/manifest.webmanifest",
   "/apple-icon.png",
   "/icon.png",
+  "/admin-login",
+  "/install",
 ];
 
 export async function updateSession(request: NextRequest) {

@@ -21,7 +21,7 @@ export function AdminSupportClient({ tickets = [] }: { tickets: SupportTicket[] 
     const term = searchTerm.toLowerCase();
     const subjectMatch = t.subject.toLowerCase().includes(term);
     const catMatch = t.category.toLowerCase().includes(term);
-    const emailMatch = (t.profiles?.email || "").toLowerCase().includes(term);
+    const emailMatch = (t.user_email || "").toLowerCase().includes(term);
     const idMatch = t.id.toLowerCase().includes(term);
 
     const matchesStatus = statusFilter === "all" || t.status === statusFilter;
@@ -98,7 +98,7 @@ export function AdminSupportClient({ tickets = [] }: { tickets: SupportTicket[] 
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-zinc-700">
-                        {t.profiles?.email || "User"}
+                        {t.user_email || "User"}
                       </td>
                       <td className="py-3.5 px-4 text-zinc-600 font-medium">
                         {t.category}

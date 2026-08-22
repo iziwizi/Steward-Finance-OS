@@ -150,7 +150,7 @@ export function TicketThreadClient({
                     {isAdminMsg ? <ShieldCheck className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
                   </div>
                   <span className="font-bold text-zinc-900">
-                    {isAdminMsg ? "StewardOS Support" : (m.profiles?.full_name || "Customer")}
+                    {isAdminMsg ? "StewardOS Support" : (m.sender_name || "Customer")}
                   </span>
                   {isCurrentUserSender && (
                     <span className="text-[10px] font-semibold text-zinc-400">(You)</span>

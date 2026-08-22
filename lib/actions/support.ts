@@ -13,7 +13,8 @@ export interface SupportTicket {
   status: "open" | "in_progress" | "waiting_for_user" | "resolved" | "closed";
   created_at: string;
   updated_at: string;
-  profiles?: { full_name?: string | null; email?: string | null };
+  user_name?: string | null;
+  user_email?: string | null;
 }
 
 export interface SupportMessage {
@@ -23,7 +24,7 @@ export interface SupportMessage {
   sender_role: "user" | "admin";
   message: string;
   created_at: string;
-  profiles?: { full_name?: string | null; email?: string | null };
+  sender_name?: string | null;
 }
 
 export async function createSupportTicket(formData: FormData) {
@@ -93,7 +94,7 @@ export async function createSupportTicket(formData: FormData) {
   return { success: true, ticketId: ticket.id };
 }
 
-export async function getUserSupportTickets() {
+export async function getUserSupportTickets(): Promise<SupportTicket[]> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -102,18 +103,22 @@ export async function getUserSupportTickets() {
 
   const { data: tickets, error } = await supabase
     .from("support_tickets")
-    .select("*")
+    .select("id, user_id, subject, category, status, created_at, updated_at")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .order("updated_at", { ascending: false });
 
   if (error) {
     console.error("getUserSupportTickets error:", error);
     return [];
   }
-  return tickets ?? [];
+  return (tickets ?? []) as SupportTicket[];
 }
 
-export async function getSupportTicketWithMessages(ticketId: string) {
+export async function getSupportTicketWithMessages(ticketId: string): Promise<{
+  ticket: SupportTicket;
+  messages: SupportMessage[];
+  currentUser: { id: string; isAdmin: boolean };
+}> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -128,30 +133,73 @@ export async function getSupportTicketWithMessages(ticketId: string) {
     .maybeSingle();
   const isAdmin = profile?.role === "admin";
 
-  const { data: ticket, error: ticketErr } = await supabase
+  // Fetch ticket (no join — avoids FK requirement)
+  const { data: ticketRaw, error: ticketErr } = await supabase
     .from("support_tickets")
-    .select("*, profiles:user_id(full_name, email)")
+    .select("id, user_id, subject, category, status, created_at, updated_at")
     .eq("id", ticketId)
     .single();
 
-  if (ticketErr || !ticket) {
-    throw new Error("Support ticket not found.");
+  if (ticketErr || !ticketRaw) {
+    throw new Error("Support ticket not found or access denied.");
   }
 
   // Security guard: User must own the ticket or be an admin
-  if (ticket.user_id !== user.id && !isAdmin) {
+  if (ticketRaw.user_id !== user.id && !isAdmin) {
     throw new Error("Unauthorized access to this support ticket.");
   }
 
-  const { data: messages, error: msgErr } = await supabase
+  // Fetch ticket owner profile for admin view
+  let user_name: string | null = null;
+  let user_email: string | null = null;
+  if (isAdmin && ticketRaw.user_id) {
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("full_name, email")
+      .eq("id", ticketRaw.user_id)
+      .maybeSingle();
+    user_name = ownerProfile?.full_name ?? null;
+    user_email = ownerProfile?.email ?? null;
+  }
+
+  const ticket: SupportTicket = {
+    ...(ticketRaw as any),
+    user_name,
+    user_email,
+  };
+
+  // Fetch messages (no join — avoids FK requirement)
+  const { data: messagesRaw, error: msgErr } = await supabase
     .from("support_messages")
-    .select("*, profiles:sender_id(full_name, email)")
+    .select("id, ticket_id, sender_id, sender_role, message, created_at")
     .eq("ticket_id", ticketId)
     .order("created_at", { ascending: true });
 
+  if (msgErr) {
+    console.error("getSupportTicketWithMessages messages error:", msgErr);
+  }
+
+  // Enrich messages with sender names via separate profile lookups
+  const messages: SupportMessage[] = await Promise.all(
+    (messagesRaw ?? []).map(async (m: any) => {
+      let sender_name: string | null = null;
+      if (m.sender_role === "admin") {
+        sender_name = "StewardOS Support";
+      } else {
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", m.sender_id)
+          .maybeSingle();
+        sender_name = senderProfile?.full_name ?? null;
+      }
+      return { ...m, sender_name };
+    })
+  );
+
   return {
     ticket,
-    messages: messages ?? [],
+    messages,
     currentUser: { id: user.id, isAdmin },
   };
 }
@@ -177,7 +225,7 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
 
   const { data: ticket, error: ticketErr } = await supabase
     .from("support_tickets")
-    .select("id, user_id, subject")
+    .select("id, user_id, subject, status")
     .eq("id", ticketId)
     .single();
 
@@ -188,6 +236,10 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
   // Security guard
   if (ticket.user_id !== user.id && !isAdmin) {
     return { success: false, error: "Unauthorized." };
+  }
+
+  if (ticket.status === "closed") {
+    return { success: false, error: "This ticket is closed and cannot receive new replies." };
   }
 
   const sender_role = isAdmin ? "admin" : "user";
@@ -220,15 +272,42 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
       link: `/support/${ticketId}`,
     });
 
+    // Best-effort push notification to ticket owner
+    try {
+      const { data: subs } = await supabase
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth_key")
+        .eq("user_id", ticket.user_id);
+
+      if (subs && subs.length > 0) {
+        const { sendPushToSubscription } = await import("../push/send");
+        for (const s of subs) {
+          const res = await sendPushToSubscription(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth_key } },
+            {
+              title: "Support Reply",
+              body: `StewardOS replied to: "${ticket.subject}"`,
+              link: `/support/${ticketId}`,
+            }
+          ).catch(() => null);
+          if (res?.expired) {
+            await supabase.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not dispatch push to ticket owner:", e);
+    }
+
     // Best-effort email to ticket owner
     try {
       const { data: ticketOwner } = await supabase
         .from("profiles")
-        .select("email, notification_email")
+        .select("email")
         .eq("id", ticket.user_id)
         .maybeSingle();
 
-      const userEmail = ticketOwner?.notification_email || ticketOwner?.email;
+      const userEmail = ticketOwner?.email;
       if (userEmail) {
         const { sendDigestEmail, renderSupportReplyEmail } = await import("../email/send");
         const { getAppBaseUrl } = await import("../email/resend");
@@ -251,8 +330,18 @@ export async function replyToSupportTicket(ticketId: string, messageContent: str
   return { success: true };
 }
 
-export async function adminUpdateTicketStatus(ticketId: string, status: "open" | "in_progress" | "waiting_for_user" | "resolved" | "closed") {
-  const { supabase } = await requireAdmin();
+export async function adminUpdateTicketStatus(
+  ticketId: string,
+  status: "open" | "in_progress" | "waiting_for_user" | "resolved" | "closed"
+) {
+  const { supabase, user } = await requireAdmin();
+
+  // Fetch ticket to notify owner
+  const { data: ticket } = await supabase
+    .from("support_tickets")
+    .select("id, user_id, subject")
+    .eq("id", ticketId)
+    .single();
 
   const { error } = await supabase
     .from("support_tickets")
@@ -263,22 +352,57 @@ export async function adminUpdateTicketStatus(ticketId: string, status: "open" |
     return { success: false, error: error.message };
   }
 
+  // Notify ticket owner about status change
+  if (ticket && ticket.user_id !== user.id) {
+    const statusLabels: Record<string, string> = {
+      open: "Open",
+      in_progress: "In Progress",
+      waiting_for_user: "Awaiting Your Reply",
+      resolved: "Resolved",
+      closed: "Closed",
+    };
+    await supabase.from("in_app_notifications").insert({
+      user_id: ticket.user_id,
+      type: "system",
+      title: "Support Ticket Status Updated",
+      body: `Your ticket "${ticket.subject}" is now: ${statusLabels[status] || status}`,
+      link: `/support/${ticketId}`,
+    });
+  }
+
   revalidatePath(`/admin/support`);
   revalidatePath(`/support/${ticketId}`);
   return { success: true };
 }
 
-export async function getAllAdminSupportTickets() {
+export async function getAllAdminSupportTickets(): Promise<SupportTicket[]> {
   const { supabase } = await requireAdmin();
 
   const { data: tickets, error } = await supabase
     .from("support_tickets")
-    .select("*, profiles:user_id(full_name, email)")
-    .order("created_at", { ascending: false });
+    .select("id, user_id, subject, category, status, created_at, updated_at")
+    .order("updated_at", { ascending: false });
 
   if (error) {
     console.error("getAllAdminSupportTickets error:", error);
     return [];
   }
-  return tickets ?? [];
+
+  // Enrich each ticket with user info via separate profile lookups
+  const enriched = await Promise.all(
+    (tickets ?? []).map(async (t: any) => {
+      const { data: ownerProfile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", t.user_id)
+        .maybeSingle();
+      return {
+        ...t,
+        user_name: ownerProfile?.full_name ?? null,
+        user_email: ownerProfile?.email ?? null,
+      };
+    })
+  );
+
+  return enriched as SupportTicket[];
 }
